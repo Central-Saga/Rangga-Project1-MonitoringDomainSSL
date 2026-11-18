@@ -59,9 +59,14 @@ class AssetController extends Controller
      */
     public function store(StoreAssetRequest $request): AssetResource
     {
+        $this->authorize('create', Asset::class);
+
         $asset = Asset::query()->create($request->validated());
 
-        return new AssetResource($asset->load('project.client'));
+        $resource = new AssetResource($asset->load('project.client'));
+
+        return response($resource, 201)
+            ->header('Location', route('assets.show', $asset->id));
     }
 
     /**
@@ -82,6 +87,8 @@ class AssetController extends Controller
      */
     public function update(UpdateAssetRequest $request, Asset $asset): AssetResource
     {
+        $this->authorize('update', $asset);
+
         $asset->update($request->validated());
 
         return new AssetResource($asset->load('project.client'));
