@@ -23,6 +23,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (response.status === 401) {
         return { error: 'unauthorized', data: {}, status: 401, offline: false };
       }
+      if (response.status === 403) {
+        return { error: 'forbidden', data: {}, status: 403, offline: false };
+      }
       if (response.status === 429) {
         return { error: 'rate_limited', data: {}, status: 429, offline: false };
       }
