@@ -23,6 +23,8 @@ module.exports = {
             value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy',
             value: 'require-corp' },
+          { key: 'Cache-Control',
+            value: 'no-store, max-age=0' },
         ],
       },
     ]
