@@ -29,6 +29,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (response.status === 429) {
         return { error: 'rate_limited', data: {}, status: 429, offline: false };
       }
+      if (response.status === 422) {
+        return { error: 'validation_error', data: {}, status: 422, offline: false };
+      }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
     
