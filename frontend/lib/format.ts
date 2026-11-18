@@ -18,7 +18,9 @@ export function expiryText(days: number): string {
   return `${days} hari lagi`;
 }
 
-export function expiryColor(days: number, status: string): string {
+export type Status = "active" | "expired" | "suspended" | "on_hold" | "completed" | "paid" | "pending";
+
+export function expiryColor(days: number, status: Status): string {
   if (status === "expired" || days < 0) return "bg-danger-soft text-danger";
   if (days <= 7) return "bg-danger-soft text-danger";
   if (days <= 30) return "bg-warn-soft text-warn";
