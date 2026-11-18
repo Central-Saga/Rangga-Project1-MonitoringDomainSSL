@@ -3,12 +3,13 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getToken } from "@/lib/api";
+import { safeNextPath } from "@/lib/redirect";
 import type { User } from "@/types";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, nextPath?: string) => Promise<void>;
   register: (input: {
     name: string;
     email: string;
@@ -44,22 +45,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persistSession = useCallback(
-    (res: SessionResponse) => {
+    (res: SessionResponse, nextPath?: string) => {
       localStorage.setItem("token", res.token);
       const loggedUser = "data" in res.user ? res.user.data : res.user;
       setUser(loggedUser);
-      router.push("/dashboard");
+      router.push(safeNextPath(nextPath));
     },
     [router]
   );
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, nextPath?: string) => {
       const res = await api.post<SessionResponse>("/auth/login", {
         email,
         password,
       });
-      persistSession(res);
+      persistSession(res, nextPath);
     },
     [persistSession]
   );
