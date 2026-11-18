@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'resource_not_found' | 'server_error' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'resource_not_found' | 'server_error' | 'rate_limited' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -22,6 +22,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 401) {
         return { error: 'unauthorized', data: {}, status: 401, offline: false };
+      }
+      if (response.status === 429) {
+        return { error: 'rate_limited', data: {}, status: 429, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
