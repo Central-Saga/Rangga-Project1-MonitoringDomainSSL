@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError, firstMessages } from "@/lib/api";
+import { safeNextPath } from "@/lib/redirect";
 import { TextField } from "@/components/auth/TextField";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
@@ -35,6 +36,9 @@ const demoRoles = [
 export function LoginForm() {
   const { user, loading, login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Tujuan setelah login hanya boleh path internal (cegah open redirect).
+  const nextPath = safeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState<string>(demoRoles[0].email);
   const [password, setPassword] = useState("password");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,15 +46,15 @@ export function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user && !submitting) router.replace("/dashboard");
-  }, [loading, user, submitting, router]);
+    if (!loading && user && !submitting) router.replace(nextPath);
+  }, [loading, user, submitting, router, nextPath]);
 
   async function doLogin(mail: string, pass: string) {
     setFormError(null);
     setErrors({});
     setSubmitting(true);
     try {
-      await login(mail, pass);
+      await login(mail, pass, nextPath);
     } catch (err) {
       if (err instanceof ApiError) {
         const messages = firstMessages(err.errors);
