@@ -29,6 +29,8 @@ module.exports = {
             value: 'no-store, max-age=0' },
           { key: 'X-DNS-Prefetch-Control',
             value: 'off' },
+          { key: 'Expect-CT',
+            value: 'max-age=86400, reportUri="https://example.com/report"' },
         ],
       },
     ]
