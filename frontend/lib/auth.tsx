@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, getToken } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { User } from "@/types";
 
 interface AuthContextValue {
@@ -19,7 +19,7 @@ interface AuthContextValue {
 }
 
 interface SessionResponse {
-  token: string;
+  token?: string;
   user: { data: User } | User;
 }
 
@@ -31,11 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     api
       .get<{ data: User }>("/auth/me")
       .then((res) => setUser(res.data))
@@ -45,7 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const persistSession = useCallback(
     (res: SessionResponse) => {
-      localStorage.setItem("token", res.token);
       const loggedUser = "data" in res.user ? res.user.data : res.user;
       setUser(loggedUser);
       router.push("/dashboard");
@@ -86,7 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.post("/auth/logout");
     } finally {
-      localStorage.removeItem("token");
       setUser(null);
       router.push("/login");
     }

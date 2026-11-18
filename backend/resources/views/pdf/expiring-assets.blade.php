@@ -44,7 +44,7 @@
                     <td>{{ $asset->provider }}</td>
                     <td>{{ $asset->expired_date->format('d M Y') }}</td>
                     <td class="{{ $daysLeft <= 7 ? 'danger' : 'warning' }}">{{ $daysLeft }} hari</td>
-                    <td>Rp {{ number_format((float) $asset->renewal_cost, 0, ',', '.') }}</td>
+                    <td>Rp {{ number_format((int) $asset->renewal_cost, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr><td colspan="8" style="text-align:center">Tidak ada aset yang akan kedaluwarsa.</td></tr>

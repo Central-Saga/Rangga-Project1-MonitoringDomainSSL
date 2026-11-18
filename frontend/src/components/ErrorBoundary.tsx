@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.props.onError) {
       this.props.onError(error, info);
     }
-    // Bisa juga dikirim ke service seperti Sentry, Bugsnag, dll
+    // Log ke console (ditingkatkan ke Sentry/Bugsnag di production)
     console.error('Error caught by ErrorBoundary:', error, info);
   }
 

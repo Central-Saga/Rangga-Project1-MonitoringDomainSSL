@@ -10,25 +10,28 @@ export class ApiError extends Error {
   }
 }
 
+// getToken() sekarang mengembalikan null karena token disimpan di HttpOnly Cookie
 export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return null;
 }
 
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getToken();
-
+  // 1. HAPUS penggunaan token di Header Authorization
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(options.body ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string>),
   };
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers }).catch(() => {
+  // 2. TAMBAHKAN credentials: "include" agar cookie ikut terkirim
+  const res = await fetch(`${API_URL}${path}`, { 
+    ...options, 
+    headers,
+    credentials: "include" 
+  }).catch(() => {
     throw new ApiError(0, "Tidak dapat terhubung ke server. Periksa koneksi Anda dan coba lagi.");
   });
 
@@ -50,8 +53,7 @@ export const api = {
 
 async function checkResponse(res: Response): Promise<void> {
   if (res.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    // HAPUS localStorage.removeItem karena kita tidak pakai localStorage lagi
     if (!window.location.pathname.startsWith("/login")) {
       window.location.href = "/login";
     }
@@ -75,12 +77,12 @@ export function firstMessages(errors?: Record<string, string[]>): Record<string,
 }
 
 export async function downloadPdf(path: string, filename: string): Promise<void> {
-  const token = getToken();
+  // 3. TAMBAHKAN credentials: "include" di downloadPdf juga
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
       Accept: "application/pdf, application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
+    credentials: "include",
   }).catch(() => {
     throw new ApiError(0, "Tidak dapat terhubung ke server. Periksa koneksi Anda dan coba lagi.");
   });

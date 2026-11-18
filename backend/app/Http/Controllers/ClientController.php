@@ -40,6 +40,8 @@ class ClientController extends Controller
      */
     public function store(StoreClientRequest $request): ClientResource
     {
+        $this->authorize('create', Client::class);
+
         $client = Client::query()->create($request->validated());
 
         return new ClientResource($client);
@@ -60,6 +62,8 @@ class ClientController extends Controller
      */
     public function update(UpdateClientRequest $request, Client $client): ClientResource
     {
+        $this->authorize('update', $client);
+
         $client->update($request->validated());
 
         return new ClientResource($client);

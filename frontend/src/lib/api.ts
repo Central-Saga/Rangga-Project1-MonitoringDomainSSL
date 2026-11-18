@@ -5,7 +5,12 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
   offline: boolean;
 }> {
   try {
-    const response = await fetch(url, options);
+    // Add CSRF token header for Laravel Sanctum
+    const headers = {
+      ...options.headers,
+      'X-Requested-With': 'XMLHttpRequest',
+    };
+    const response = await fetch(url, { ...options, headers });
     
     if (!response.ok) {
       // Handle specific error status codes

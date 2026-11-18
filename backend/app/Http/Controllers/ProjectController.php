@@ -47,6 +47,8 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request): ProjectResource
     {
+        $this->authorize('create', Project::class);
+
         $project = Project::query()->create($request->validated());
 
         return new ProjectResource($project->load('client'));
@@ -67,6 +69,8 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $project->update($request->validated());
 
         return new ProjectResource($project->load('client'));
