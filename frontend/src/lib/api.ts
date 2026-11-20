@@ -98,6 +98,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (response.status === 428) {
         return { error: 'request_header_fields_too_large', data: {}, status: 428, offline: false };
       }
+      if (response.status === 424) {
+        return { error: 'failed_dependency', data: {}, status: 424, offline: false };
+      }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
     
