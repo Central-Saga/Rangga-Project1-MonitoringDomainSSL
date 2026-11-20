@@ -32,6 +32,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (response.status === 422) {
         return { error: 'validation_error', data: {}, status: 422, offline: false };
       }
+      if (response.status === 503) {
+        return { error: 'service_unavailable', data: {}, status: 503, offline: false };
+      }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
     
