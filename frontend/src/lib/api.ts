@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -64,6 +64,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 411) {
         return { error: 'length_required', data: {}, status: 411, offline: false };
+      }
+      if (response.status === 412) {
+        return { error: 'precondition_failed', data: {}, status: 412, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
