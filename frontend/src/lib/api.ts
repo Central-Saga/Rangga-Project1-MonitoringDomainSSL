@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | 'uri_too_long' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -67,6 +67,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 412) {
         return { error: 'precondition_failed', data: {}, status: 412, offline: false };
+      }
+      if (response.status === 414) {
+        return { error: 'uri_too_long', data: {}, status: 414, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
