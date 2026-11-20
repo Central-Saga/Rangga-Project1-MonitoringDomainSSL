@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -52,6 +52,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 409) {
         return { error: 'conflict', data: {}, status: 409, offline: false };
+      }
+      if (response.status === 406) {
+        return { error: 'not_acceptable', data: {}, status: 406, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
