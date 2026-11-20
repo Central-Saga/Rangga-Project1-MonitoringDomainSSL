@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | 'uri_too_long' | 'unsupported_media_type' | 'range_not_satisfiable' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | 'uri_too_long' | 'unsupported_media_type' | 'range_not_satisfiable' | 'im_a_teapot' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -76,6 +76,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 416) {
         return { error: 'range_not_satisfiable', data: {}, status: 416, offline: false };
+      }
+      if (response.status === 418) {
+        return { error: 'im_a_teapot', data: {}, status: 418, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
