@@ -1,5 +1,5 @@
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<{
-  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | 'uri_too_long' | 'unsupported_media_type' | null;
+  error: 'network_error' | 'api_error' | 'unauthorized' | 'forbidden' | 'resource_not_found' | 'validation_error' | 'rate_limited' | 'service_unavailable' | 'payload_too_large' | 'bad_request' | 'server_error' | 'request_timeout' | 'method_not_allowed' | 'expectation_failed' | 'conflict' | 'not_acceptable' | 'proxy_authentication_required' | 'gone' | 'length_required' | 'precondition_failed' | 'uri_too_long' | 'unsupported_media_type' | 'range_not_satisfiable' | null;
   data: any;
   status: number;
   offline: boolean;
@@ -73,6 +73,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       }
       if (response.status === 415) {
         return { error: 'unsupported_media_type', data: {}, status: 415, offline: false };
+      }
+      if (response.status === 416) {
+        return { error: 'range_not_satisfiable', data: {}, status: 416, offline: false };
       }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
