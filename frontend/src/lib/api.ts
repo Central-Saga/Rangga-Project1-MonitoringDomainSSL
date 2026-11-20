@@ -38,6 +38,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
       if (response.status === 413) {
         return { error: 'payload_too_large', data: {}, status: 413, offline: false };
       }
+      if (response.status === 400) {
+        return { error: 'bad_request', data: {}, status: 400, offline: false };
+      }
       return { error: 'api_error', data: {}, status: response.status, offline: false };
     }
     
