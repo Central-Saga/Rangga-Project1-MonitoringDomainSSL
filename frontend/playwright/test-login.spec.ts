@@ -23,6 +23,6 @@ test.describe('Critical User Flows', () => {
     
     // Verify assets table loaded
     await expect(page.locator('table')).toBeVisible();
-    await expect(page.locator('tr')).toHaveCountGreaterThan(0);
+    expect(await page.locator('tr').count()).toBeGreaterThan(0);
   });
 });

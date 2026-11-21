@@ -10,7 +10,7 @@ class AuthLoginTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_login_issues_a_sanctum_token_for_valid_credentials(): void
+    public function test_login_sets_http_only_auth_cookie_without_exposing_token(): void
     {
         $user = User::factory()->admin()->create(['email' => 'admin@example.com']);
 
@@ -19,7 +19,12 @@ class AuthLoginTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertOk()->assertJsonPath('user.id', $user->id)->assertJsonStructure(['token']);
+        $response->assertOk()
+            ->assertJsonPath('user.id', $user->id)
+            ->assertJsonMissingPath('token')
+            ->assertCookie('token')
+            ->assertCookie('XSRF-TOKEN');
+
         $this->assertCount(1, $user->tokens);
     }
 

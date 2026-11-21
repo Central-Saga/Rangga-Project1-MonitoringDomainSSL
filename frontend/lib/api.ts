@@ -10,27 +10,40 @@ export class ApiError extends Error {
   }
 }
 
-// getToken() sekarang mengembalikan null karena token disimpan di HttpOnly Cookie
+// Token auth disimpan di cookie HttpOnly; JavaScript hanya membaca XSRF-TOKEN.
 export function getToken(): string | null {
   return null;
+}
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const prefix = `${name}=`;
+  const entry = document.cookie.split("; ").find((item) => item.startsWith(prefix));
+  return entry ? decodeURIComponent(entry.slice(prefix.length)) : null;
+}
+
+function csrfHeaders(method: string): Record<string, string> {
+  if (["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) return {};
+  const token = readCookie("XSRF-TOKEN");
+  return token ? { "X-XSRF-TOKEN": token } : {};
 }
 
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // 1. HAPUS penggunaan token di Header Authorization
+  const method = options.method ?? "GET";
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...csrfHeaders(method),
     ...(options.headers as Record<string, string>),
   };
 
-  // 2. TAMBAHKAN credentials: "include" agar cookie ikut terkirim
-  const res = await fetch(`${API_URL}${path}`, { 
-    ...options, 
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
     headers,
-    credentials: "include" 
+    credentials: "include",
   }).catch(() => {
     throw new ApiError(0, "Tidak dapat terhubung ke server. Periksa koneksi Anda dan coba lagi.");
   });
@@ -52,10 +65,13 @@ export const api = {
 };
 
 async function checkResponse(res: Response): Promise<void> {
+  if (res.status === 419) {
+    throw new ApiError(419, "Sesi keamanan berakhir. Silakan muat ulang halaman.");
+  }
+
   if (res.status === 401) {
-    // HAPUS localStorage.removeItem karena kita tidak pakai localStorage lagi
     if (!window.location.pathname.startsWith("/login")) {
-      window.location.href = "/login";
+      window.location.replace("/login");
     }
     throw new ApiError(401, "Sesi berakhir, silakan login kembali.");
   }
@@ -77,7 +93,6 @@ export function firstMessages(errors?: Record<string, string[]>): Record<string,
 }
 
 export async function downloadPdf(path: string, filename: string): Promise<void> {
-  // 3. TAMBAHKAN credentials: "include" di downloadPdf juga
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
       Accept: "application/pdf, application/json",

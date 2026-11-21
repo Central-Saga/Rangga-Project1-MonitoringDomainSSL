@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 
@@ -7,17 +8,17 @@ export const metadata: Metadata = {
   description: "Sistem monitoring domain, hosting, VPS, dan SSL dengan alert kedaluwarsa otomatis.",
 };
 
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script src="/theme-init.js" nonce={nonce} async />
       </head>
       <body className="antialiased bg-app text-ink">
         <AuthProvider>{children}</AuthProvider>

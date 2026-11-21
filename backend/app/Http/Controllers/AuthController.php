@@ -9,13 +9,15 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     /**
-     * Registrasi user baru (role client) dan terbitkan token Sanctum.
+     * Registrasi user baru (role client) dan terbitkan token Sanctum lewat cookie.
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -26,14 +28,16 @@ class AuthController extends Controller
 
         $token = $user->createToken('api')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => new UserResource($user->load('client')),
-        ], 201);
+        return $this->withAuthCookies(
+            response()->json([
+                'user' => new UserResource($user->load('client')),
+            ], 201),
+            $token
+        );
     }
 
     /**
-     * Login dan terbitkan token Sanctum.
+     * Login dan terbitkan token Sanctum lewat cookie HttpOnly.
      *
      * @throws ValidationException
      */
@@ -53,20 +57,25 @@ class AuthController extends Controller
 
         $token = $user->createToken('api')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => new UserResource($user->load('client')),
-        ]);
+        return $this->withAuthCookies(
+            response()->json([
+                'user' => new UserResource($user->load('client')),
+            ]),
+            $token
+        );
     }
 
     /**
-     * Logout dan cabut token yang sedang dipakai.
+     * Logout: cabut token dan hapus cookie auth/CSRF.
      */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Berhasil logout.']);
+        return response()
+            ->json(['message' => 'Berhasil logout.'])
+            ->withCookie(Cookie::forget('token'))
+            ->withCookie(Cookie::forget('XSRF-TOKEN'));
     }
 
     /**
@@ -75,5 +84,17 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource($request->user()->load('client'));
+    }
+
+    /**
+     * Token_auth tidak pernah dikirim dalam body JSON / JavaScript.
+     */
+    private function withAuthCookies(JsonResponse $response, string $token): JsonResponse
+    {
+        $secure = app()->environment('production');
+
+        return $response
+            ->cookie('token', $token, 60, '/', null, $secure, true, false, 'lax')
+            ->cookie('XSRF-TOKEN', Str::random(40), 60, '/', null, $secure, false, false, 'lax');
     }
 }

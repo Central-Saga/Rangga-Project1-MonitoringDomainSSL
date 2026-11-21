@@ -30,6 +30,7 @@ dan CI GitHub Actions (Pint + PHPUnit + Vite build) aktif.
 ├── PROJECT2.md       # Deliverable Project 2 (link, cara run, bukti)
 ├── PRD.md            # Product Requirements Document (Project 1)
 ├── ERD.md            # Entity Relationship Diagram (Project 1)
+├── compose.yaml      # Docker Compose (app + db + cache + mailpit)
 └── podman-compose.yml
 ```
 
@@ -74,7 +75,9 @@ dan CI GitHub Actions (Pint + PHPUnit + Vite build) aktif.
 4. **Jalankan Aplikasi**
    ```bash
    # Dari root folder
-   docker compose up -d
+   docker compose -f compose.yaml up -d
+    docker compose -f compose.yaml ps
+    curl -fsS http://localhost:8000/up
    # Atau secara manual:
    # - Backend: php artisan serve --port=8000
    # - Frontend: npm run dev (akses di http://localhost:3000)
