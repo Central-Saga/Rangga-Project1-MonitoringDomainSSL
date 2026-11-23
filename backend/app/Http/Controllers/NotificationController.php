@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ConstrainsListQueries;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 
 class NotificationController extends Controller
 {
+    use ConstrainsListQueries;
+
     /**
      * Daftar notifikasi milik user yang sedang login.
      */
@@ -16,7 +19,7 @@ class NotificationController extends Controller
         $notifications = $request->user()
             ->notifications()
             ->latest()
-            ->paginate($request->integer('per_page', 20))
+            ->paginate($this->perPage($request, 50))
             ->withQueryString();
 
         return response()->json([

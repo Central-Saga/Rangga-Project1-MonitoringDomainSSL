@@ -23,6 +23,7 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
+            // onDelete eksplisit: klien dihapus -> akun client kehilangan tautan.
             $table->foreign('client_id')->references('id')->on('clients')->nullOnDelete();
         });
     }

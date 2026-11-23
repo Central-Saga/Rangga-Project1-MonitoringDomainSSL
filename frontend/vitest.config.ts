@@ -6,6 +6,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'lib/**/*.test.ts', 'lib/**/*.test.tsx'],
+    exclude: ['node_modules/**', 'playwright/**', '.next/**'],
     coverage: {
       reporter: ['text', 'json', 'html'],
       thresholds: {

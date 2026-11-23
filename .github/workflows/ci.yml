@@ -2,14 +2,57 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, fix/**]
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
-  lint-and-typecheck:
-    name: Lint & TypeScript Check
+  backend:
+    name: Backend (lint + static + test + audit)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, pdo_pgsql, redis, zip, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Lint (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Static check (config + route cache)
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan route:clear
+          php artisan config:clear
+
+      - name: Test
+        run: php artisan test
+
+      - name: Dependency audit (composer)
+        run: composer audit --locked
+
+  frontend:
+    name: Frontend (lint + typecheck + audit + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,47 +60,44 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd frontend
-          npm install
+        run: npm ci --ignore-scripts
 
-      - name: Run lint
-        run: |
-          cd frontend
-          npm run lint -- --max-warnings=0
+      - name: Lint
+        run: npm run lint -- --max-warnings=0
 
-      - name: Run TypeScript check
-        run: |
-          cd frontend
-          npx tsc --noEmit
+      - name: TypeScript check
+        run: npx tsc --noEmit
 
-  test-and-build:
-    name: Test & Build
+      - name: Dependency audit
+        run: npm audit --audit-level=critical
+
+      - name: Build
+        run: npm run build
+
+  release:
+    name: Release (migrate + optimize + queue restart)
     runs-on: ubuntu-latest
-    needs: lint-and-typecheck
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
+      # Migrasi dijalankan sebagai job rilis, bukan saat boot container (15.7).
+      - name: Run migrations
         run: |
-          cd frontend
-          npm install
+          echo "Deploy hook: php artisan migrate --force"
+          echo "Tambahkan langkah deploy ke server produksi di sini."
 
-      - name: Run tests
+      - name: Optimize + queue restart + storage link
         run: |
-          cd frontend
-          npm test 2>/dev/null || echo "No test script defined, skipping"
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
+          echo "Deploy hook: php artisan optimize"
+          echo "Deploy hook: php artisan queue:restart"
+          echo "Deploy hook: php artisan storage:link"
+          echo "Deploy hook: chown -R www-data:www-data storage bootstrap/cache"

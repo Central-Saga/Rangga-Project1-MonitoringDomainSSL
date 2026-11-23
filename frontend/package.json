@@ -9,9 +9,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
+    "dompurify": "3.5.0",
     "next": "16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"

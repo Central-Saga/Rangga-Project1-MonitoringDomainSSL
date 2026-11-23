@@ -16,6 +16,25 @@ class Client extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * Cast eksplisit untuk seluruh kolom tersimpan (termasuk audit/soft delete).
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'name' => 'string',
+            'company' => 'string',
+            'email' => 'string',
+            'phone' => 'string',
+            'address' => 'string',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
+
+    /**
      * @return HasMany<Project>
      */
     public function projects(): HasMany

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
@@ -70,12 +71,25 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        // Cabut seluruh token milik user agar token lama tidak bisa dipakai ulang.
+        $request->user()->tokens()->delete();
 
         return response()
             ->json(['message' => 'Berhasil logout.'])
             ->withCookie(Cookie::forget('token'))
             ->withCookie(Cookie::forget('XSRF-TOKEN'));
+    }
+
+    /**
+     * Ganti password dan cabut seluruh token (akses lama langsung mati).
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update(['password' => $request->validated('password')]);
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Password berhasil diubah. Silakan login kembali.']);
     }
 
     /**

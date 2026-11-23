@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
+            $table->index('client_id');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('status')->default('active')->index();

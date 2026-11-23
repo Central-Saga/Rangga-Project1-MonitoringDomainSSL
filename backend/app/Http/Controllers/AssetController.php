@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssetStatus;
+use App\Http\Concerns\ConstrainsListQueries;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
@@ -14,12 +15,15 @@ use Illuminate\Http\Response;
 
 class AssetController extends Controller
 {
+    use ConstrainsListQueries;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Asset::class);
+        $this->validateListQuery($request, ['expired_date', 'created_at', 'name'], ['type', 'status', 'project_id', 'expiring_in', 'search']);
 
         $assets = Asset::query()
             ->with('project.client')
@@ -48,7 +52,7 @@ class AssetController extends Controller
                 });
             })
             ->orderBy('expired_date')
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return AssetResource::collection($assets);

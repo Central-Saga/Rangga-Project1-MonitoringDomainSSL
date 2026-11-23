@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ConstrainsListQueries;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
@@ -12,12 +13,15 @@ use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
+    use ConstrainsListQueries;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', User::class);
+        $this->validateListQuery($request, ['created_at', 'name', 'email'], ['role', 'search']);
 
         $users = User::query()
             ->with('client')
@@ -32,7 +36,7 @@ class UserController extends Controller
                 });
             })
             ->latest()
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return UserResource::collection($users);

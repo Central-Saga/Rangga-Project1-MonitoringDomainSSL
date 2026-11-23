@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ConstrainsListQueries;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Resources\ProjectResource;
@@ -13,12 +14,15 @@ use Illuminate\Http\Response;
 
 class ProjectController extends Controller
 {
+    use ConstrainsListQueries;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Project::class);
+        $this->validateListQuery($request, ['created_at', 'name', 'start_date', 'end_date'], ['client_id', 'status', 'search']);
 
         $projects = Project::query()
             ->with('client')
@@ -36,7 +40,7 @@ class ProjectController extends Controller
                 $query->where('name', 'ilike', '%'.$request->string('search')->trim()->value().'%');
             })
             ->latest()
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return ProjectResource::collection($projects);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ConstrainsListQueries;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Http\Resources\ClientResource;
@@ -12,12 +13,15 @@ use Illuminate\Http\Response;
 
 class ClientController extends Controller
 {
+    use ConstrainsListQueries;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Client::class);
+        $this->validateListQuery($request, ['created_at', 'name'], ['search']);
 
         $clients = Client::query()
             ->withCount('projects')
@@ -29,7 +33,7 @@ class ClientController extends Controller
                 });
             })
             ->latest()
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return ClientResource::collection($clients);

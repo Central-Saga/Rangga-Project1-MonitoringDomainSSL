@@ -9,6 +9,7 @@ import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
 import { formatDate, statusColor } from "@/lib/format";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 const emptyForm = {
   client_id: "",
@@ -82,6 +83,7 @@ export default function ProjectsPage() {
     setError(null);
     const payload = {
       ...form,
+      description: sanitizeHtml(form.description),
       client_id: Number(form.client_id),
       start_date: form.start_date || null,
       end_date: form.end_date || null,
