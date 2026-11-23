@@ -1,11 +1,12 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, errorMessage } from "@/lib/api";
+import { api, errorMessage, firstMessages, isValidationError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import type { Client, Paginated } from "@/types";
 import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/shared/ui/FieldError";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -25,6 +26,7 @@ export default function ClientsPage() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -53,6 +55,7 @@ export default function ClientsPage() {
     setEditing(null);
     setForm(emptyForm);
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -66,6 +69,7 @@ export default function ClientsPage() {
       address: client.address ?? "",
     });
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -80,8 +84,10 @@ export default function ClientsPage() {
         await api.post("/clients", form);
       }
       setModalOpen(false);
+      setFieldErrors({});
       load(page, search);
     } catch (err) {
+      setFieldErrors(isValidationError(err) ? firstMessages(err.errors) : {});
       setError(errorMessage(err, "Gagal menyimpan."));
     } finally {
       setSaving(false);
@@ -210,6 +216,7 @@ export default function ClientsPage() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Perusahaan</label>
@@ -228,6 +235,7 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.email} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Telepon</label>
