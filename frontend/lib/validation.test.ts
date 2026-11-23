@@ -70,13 +70,23 @@ describe("validasi form (schema frontend = FormRequest backend)", () => {
     expect(errors.client_id).toContain("Klien wajib dipilih");
   });
 
+  it("edit user tidak mewajibkan password baru", () => {
+    const errors = validateUser(
+      { name: "User", email: "user@example.com", role: "staff" },
+      { passwordRequired: false }
+    );
+    expect(errors).toEqual({});
+  });
+
   it("menggabungkan error server dan klien", () => {
     const merged = mergeFieldErrors(
       { name: ["Server: nama dipakai"], email: ["Server: email salah"] },
       { name: "Klien: nama wajib" }
     );
-    expect(merged.name).toBe("Klien: nama wajib");
+    expect(merged.name).toBe("Server: nama dipakai");
     expect(merged.email).toBe("Server: email salah");
+    expect(mergeFieldErrors({ name: ["Server lebih otoritatif"] }, { name: "Klien" }).name)
+      .toBe("Server lebih otoritatif");
     expect(hasErrors(merged)).toBe(true);
     expect(hasErrors({})).toBe(false);
   });

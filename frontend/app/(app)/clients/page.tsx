@@ -7,6 +7,7 @@ import { ErrorAlert } from "@/components/ErrorAlert";
 import type { Client, Paginated } from "@/types";
 import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateClient } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -77,6 +78,19 @@ export default function ClientsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    const clientErrors = validateClient({
+      name: form.name,
+      company: form.company,
+      email: form.email,
+      phone: form.phone,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     try {
       if (editing) {
         await api.put(`/clients/${editing.id}`, form);
@@ -225,6 +239,7 @@ export default function ClientsPage() {
               onChange={(e) => setForm({ ...form, company: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.company} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -244,6 +259,7 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.phone} />
             </div>
           </div>
           <div>

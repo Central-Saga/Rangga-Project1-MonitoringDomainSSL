@@ -8,6 +8,7 @@ import type { Client, Paginated, User } from "@/types";
 import { Badge } from "@/components/Badge";
 import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateUser } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -88,6 +89,22 @@ export default function UsersPage() {
     setSaving(true);
     setError(null);
     setFieldErrors({});
+    const clientErrors = validateUser(
+      {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        clientId: form.client_id,
+      },
+      { passwordRequired: !editing }
+    );
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload: Record<string, unknown> = {
       name: form.name,
       email: form.email,
@@ -99,11 +116,6 @@ export default function UsersPage() {
       if (editing) {
         await api.put(`/users/${editing.id}`, payload);
       } else {
-        if (!form.password) {
-          setFieldErrors({ password: "Password wajib untuk pengguna baru." });
-          setSaving(false);
-          return;
-        }
         payload.password = form.password;
         await api.post("/users", payload);
       }

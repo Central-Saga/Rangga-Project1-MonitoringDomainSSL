@@ -7,6 +7,7 @@ import type { Client, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
 import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateProject } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -89,6 +90,18 @@ export default function ProjectsPage() {
     setSaving(true);
     setError(null);
     setFieldErrors({});
+    const clientErrors = validateProject({
+      clientId: form.client_id,
+      name: form.name,
+      startDate: form.start_date,
+      endDate: form.end_date,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...form,
       description: sanitizeHtml(form.description),

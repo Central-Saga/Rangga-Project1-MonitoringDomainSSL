@@ -9,6 +9,7 @@ import type { Asset, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
 import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateAsset } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -135,6 +136,22 @@ export default function AssetsPage() {
     setSaving(true);
     setError(null);
     setFieldErrors({});
+    const clientErrors = validateAsset({
+      projectId: form.project_id,
+      type: form.type,
+      name: form.name,
+      provider: form.provider,
+      renewalCost: form.renewal_cost,
+      billingCycle: form.billing_cycle,
+      startDate: form.start_date,
+      expiredDate: form.expired_date,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...form,
       project_id: Number(form.project_id),

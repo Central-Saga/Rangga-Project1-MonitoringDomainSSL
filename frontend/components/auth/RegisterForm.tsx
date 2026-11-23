@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError, firstMessages } from "@/lib/api";
+import { validateRegister } from "@/lib/validation";
 import { TextField } from "@/components/auth/TextField";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
@@ -26,6 +27,11 @@ export function RegisterForm() {
   async function doRegister() {
     setFormError(null);
     setErrors({});
+    const clientErrors = validateRegister({ name, email, password, passwordConfirmation });
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     setSubmitting(true);
     try {
       await register({ name, email, password, passwordConfirmation });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError, firstMessages } from "@/lib/api";
+import { validateLogin } from "@/lib/validation";
 import { TextField } from "@/components/auth/TextField";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
@@ -48,6 +49,11 @@ export function LoginForm() {
   async function doLogin(mail: string, pass: string) {
     setFormError(null);
     setErrors({});
+    const clientErrors = validateLogin({ email: mail, password: pass });
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     setSubmitting(true);
     try {
       await login(mail, pass);
