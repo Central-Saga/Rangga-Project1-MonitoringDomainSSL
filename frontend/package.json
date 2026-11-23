@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "dompurify": "3.5.0",
@@ -28,7 +29,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "jsdom": "25.0.1",
-    "msw": "2.15.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "8.3.8",

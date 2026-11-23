@@ -93,7 +93,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className="hidden text-xs text-mute lg:block">© 2026 Monitoring Infra</p>
       </aside>
 
-      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-10 sm:px-8 lg:py-14">
+      <main id="main-content" tabIndex={-1} className="relative z-10 flex flex-1 items-center justify-center px-4 py-10 outline-none sm:px-8 lg:py-14">
         <div className="w-full max-w-md">
           <div className="animate-fade-up rounded-3xl border border-line bg-card p-7 shadow-pop stagger-1 sm:p-9">
             {children}

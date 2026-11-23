@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\AssetStatus;
 use App\Http\Concerns\ConstrainsListQueries;
+use App\Http\Concerns\CreatedResponse;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -16,6 +18,7 @@ use Illuminate\Http\Response;
 class AssetController extends Controller
 {
     use ConstrainsListQueries;
+    use CreatedResponse;
 
     /**
      * Display a listing of the resource.
@@ -26,6 +29,7 @@ class AssetController extends Controller
         $this->validateListQuery($request, ['expired_date', 'created_at', 'name'], ['type', 'status', 'project_id', 'expiring_in', 'search']);
 
         $assets = Asset::query()
+            ->select(['id', 'project_id', 'type', 'name', 'provider', 'renewal_cost', 'billing_cycle', 'start_date', 'expired_date', 'auto_renew', 'status', 'metadata', 'notes', 'created_at', 'updated_at'])
             ->with('project.client')
             ->when($request->user()->isClient(), function (Builder $query) use ($request): void {
                 $query->whereHas('project', fn (Builder $query) => $query->where('client_id', $request->user()->client_id));
@@ -61,16 +65,17 @@ class AssetController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAssetRequest $request): AssetResource
+    public function store(StoreAssetRequest $request): JsonResponse
     {
         $this->authorize('create', Asset::class);
 
         $asset = Asset::query()->create($request->validated());
 
-        $resource = new AssetResource($asset->load('project.client'));
-
-        return response($resource, 201)
-            ->header('Location', route('assets.show', $asset->id));
+        return $this->created(
+            new AssetResource($asset->load('project.client')),
+            'assets.show',
+            $asset
+        );
     }
 
     /**

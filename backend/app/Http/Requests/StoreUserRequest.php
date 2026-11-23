@@ -19,6 +19,20 @@ class StoreUserRequest extends FormRequest
     }
 
     /**
+     * Normalisasi input sebelum validasi (audit 4.9).
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('name')) {
+            $this->merge(['name' => trim((string) $this->input('name'))]);
+        }
+
+        if ($this->has('email')) {
+            $this->merge(['email' => strtolower(trim((string) $this->input('email')))]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

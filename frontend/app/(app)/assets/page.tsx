@@ -7,6 +7,7 @@ import { ErrorAlert } from "@/components/ErrorAlert";
 import { useAuth } from "@/lib/auth";
 import type { Asset, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -59,6 +60,8 @@ export default function AssetsPage() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(
     async (page = 1) => {
@@ -148,13 +151,18 @@ export default function AssetsPage() {
     }
   }
 
-  async function onDelete(asset: Asset) {
-    if (!confirm(`Hapus aset "${asset.name}"?`)) return;
+  function onDelete(asset: Asset) {
+    setDeleteError(null);
+    setDeleteTarget({ id: asset.id, label: asset.name });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
     try {
-      await api.delete(`/assets/${asset.id}`);
+      await api.delete(`/assets/${target.id}`);
+      setDeleteTarget(null);
       load(page);
     } catch (err) {
-      setLoadError(errorMessage(err, "Gagal menghapus aset."));
+      setDeleteError(errorMessage(err, "Gagal menghapus aset."));
     }
   }
 
@@ -428,6 +436,17 @@ export default function AssetsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus aset"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

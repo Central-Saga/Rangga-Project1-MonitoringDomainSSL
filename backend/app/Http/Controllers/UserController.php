@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Concerns\ConstrainsListQueries;
+use App\Http\Concerns\CreatedResponse;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -14,6 +16,7 @@ use Illuminate\Http\Response;
 class UserController extends Controller
 {
     use ConstrainsListQueries;
+    use CreatedResponse;
 
     /**
      * Display a listing of the resource.
@@ -24,6 +27,7 @@ class UserController extends Controller
         $this->validateListQuery($request, ['created_at', 'name', 'email'], ['role', 'search']);
 
         $users = User::query()
+            ->select(['id', 'name', 'email', 'email_verified_at', 'role', 'client_id', 'created_at', 'updated_at'])
             ->with('client')
             ->when($request->string('role')->trim()->isNotEmpty(), function ($query) use ($request): void {
                 $query->where('role', $request->string('role')->trim()->value());
@@ -45,11 +49,11 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request): UserResource
+    public function store(StoreUserRequest $request): JsonResponse
     {
         $user = User::query()->create($request->validated());
 
-        return new UserResource($user->load('client'));
+        return $this->created(new UserResource($user->load('client')), 'users.show', $user);
     }
 
     /**

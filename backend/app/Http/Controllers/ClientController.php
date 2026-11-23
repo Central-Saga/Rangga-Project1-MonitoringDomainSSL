@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Concerns\ConstrainsListQueries;
+use App\Http\Concerns\CreatedResponse;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Http\Resources\ClientResource;
 use App\Models\Client;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -14,6 +16,7 @@ use Illuminate\Http\Response;
 class ClientController extends Controller
 {
     use ConstrainsListQueries;
+    use CreatedResponse;
 
     /**
      * Display a listing of the resource.
@@ -24,6 +27,7 @@ class ClientController extends Controller
         $this->validateListQuery($request, ['created_at', 'name'], ['search']);
 
         $clients = Client::query()
+            ->select(['id', 'name', 'company', 'email', 'phone', 'address', 'created_at', 'updated_at', 'deleted_at'])
             ->withCount('projects')
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request): void {
                 $search = $request->string('search')->trim();
@@ -42,13 +46,13 @@ class ClientController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreClientRequest $request): ClientResource
+    public function store(StoreClientRequest $request): JsonResponse
     {
         $this->authorize('create', Client::class);
 
         $client = Client::query()->create($request->validated());
 
-        return new ClientResource($client);
+        return $this->created(new ClientResource($client), 'clients.show', $client);
     }
 
     /**

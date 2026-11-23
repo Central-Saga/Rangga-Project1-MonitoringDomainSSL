@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\CookieTokenToBearer;
 use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\VerifyCookieCsrf;
@@ -20,8 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Proxy tepercaya -> X-Forwarded-* dipakai untuk ip()/scheme()/host().
         $middleware->append(TrustProxies::class);
 
+        // Request id paling luar agar seluruh log (termasuk auth/CSRF) berkorelasi.
         // Cookie auth dan CSRF harus berjalan sebelum autentikasi Sanctum.
         $middleware->api(prepend: [
+            AssignRequestId::class,
             CookieTokenToBearer::class,
             VerifyCookieCsrf::class,
         ]);

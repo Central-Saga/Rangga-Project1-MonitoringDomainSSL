@@ -31,6 +31,20 @@ class RegisterRequest extends FormRequest
     }
 
     /**
+     * Normalisasi input sebelum validasi (audit 4.9).
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('name')) {
+            $this->merge(['name' => trim((string) $this->input('name'))]);
+        }
+
+        if ($this->has('email')) {
+            $this->merge(['email' => strtolower(trim((string) $this->input('email')))]);
+        }
+    }
+
+    /**
      * Get custom messages for validator errors.
      *
      * @return array<string, string>

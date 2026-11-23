@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Client, Paginated, User } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -33,6 +34,8 @@ export default function UsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
@@ -108,10 +111,19 @@ export default function UsersPage() {
     }
   }
 
-  async function onDelete(user: User) {
-    if (!confirm(`Hapus pengguna "${user.name}"?`)) return;
-    await api.delete(`/users/${user.id}`);
-    load(page);
+  function onDelete(user: User) {
+    setDeleteError(null);
+    setDeleteTarget({ id: user.id, label: user.name });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
+    try {
+      await api.delete(`/users/${target.id}`);
+      setDeleteTarget(null);
+      load(page);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Gagal menghapus pengguna.");
+    }
   }
 
   if (authLoading || me?.role !== "admin") return <Spinner />;
@@ -252,6 +264,17 @@ export default function UsersPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus pengguna"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

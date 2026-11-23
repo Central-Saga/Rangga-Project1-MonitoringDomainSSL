@@ -32,7 +32,7 @@ class AuthController extends Controller
         return $this->withAuthCookies(
             response()->json([
                 'user' => new UserResource($user->load('client')),
-            ], 201),
+            ], 201)->header('Location', route('auth.me')),
             $token
         );
     }

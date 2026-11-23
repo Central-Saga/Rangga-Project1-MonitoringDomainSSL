@@ -5,6 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Client, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -35,6 +36,8 @@ export default function ProjectsPage() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
@@ -103,10 +106,23 @@ export default function ProjectsPage() {
     }
   }
 
-  async function onDelete(project: Project) {
-    if (!confirm(`Hapus proyek "${project.name}"? Aset terkait ikut terhapus.`)) return;
-    await api.delete(`/projects/${project.id}`);
-    load(page);
+  function onDelete(project: Project) {
+    setDeleteError(null);
+    setDeleteTarget({
+      id: project.id,
+      label: project.name,
+      detail: "Aset terkait ikut terhapus.",
+    });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
+    try {
+      await api.delete(`/projects/${target.id}`);
+      setDeleteTarget(null);
+      load(page);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Gagal menghapus proyek.");
+    }
   }
 
   return (
@@ -269,6 +285,17 @@ export default function ProjectsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus proyek"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

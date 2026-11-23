@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Http\Middleware\TrustProxies;
 use App\Models\Client;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -44,6 +46,19 @@ class ApiHardeningTest extends TestCase
     {
         $this->assertNotNull(config('sanctum.expiration'));
         $this->assertSame(10080, config('sanctum.expiration'));
+    }
+
+    public function test_eloquent_strict_mode_is_enabled_outside_production(): void
+    {
+        $this->assertTrue(Model::preventsLazyLoading());
+        $this->assertTrue(Model::preventsSilentlyDiscardingAttributes());
+    }
+
+    public function test_expired_sanctum_tokens_are_pruned_by_the_scheduler(): void
+    {
+        Artisan::call('schedule:list');
+
+        $this->assertStringContainsString('sanctum:prune-expired', Artisan::output());
     }
 
     public function test_logout_revokes_all_tokens(): void

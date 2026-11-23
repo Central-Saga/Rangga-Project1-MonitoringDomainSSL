@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, resetUnauthorizedFlag } from "@/lib/api";
 import type { User } from "@/types";
 
 interface AuthContextValue {
@@ -16,6 +16,8 @@ interface AuthContextValue {
     passwordConfirmation: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  /** Hapus sesi lokal tanpa memanggil API (dipakai penanganan 401 global). */
+  clearSession: () => void;
 }
 
 interface SessionResponse {
@@ -41,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const persistSession = useCallback(
     (res: SessionResponse) => {
       const loggedUser = "data" in res.user ? res.user.data : res.user;
+      resetUnauthorizedFlag();
       setUser(loggedUser);
       router.push("/dashboard");
     },
@@ -85,8 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router]);
 
+  const clearSession = useCallback(() => {
+    setUser(null);
+    setLoading(false);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, clearSession }}>
       {children}
     </AuthContext.Provider>
   );

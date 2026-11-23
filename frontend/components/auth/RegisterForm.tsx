@@ -108,7 +108,7 @@ export function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-soft">
         Sudah punya akun?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className="inline-flex min-h-11 items-center font-medium text-accent hover:underline">
           Masuk
         </Link>
       </p>

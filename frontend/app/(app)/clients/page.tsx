@@ -5,6 +5,7 @@ import { api, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import type { Client, Paginated } from "@/types";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -25,6 +26,8 @@ export default function ClientsPage() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1, search = "") => {
     setLoading(true);
@@ -85,13 +88,22 @@ export default function ClientsPage() {
     }
   }
 
-  async function onDelete(client: Client) {
-    if (!confirm(`Hapus klien "${client.name}"? Proyek terkait ikut terhapus.`)) return;
+  function onDelete(client: Client) {
+    setDeleteError(null);
+    setDeleteTarget({
+      id: client.id,
+      label: client.name,
+      detail: "Proyek dan aset terkait ikut terhapus.",
+    });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
     try {
-      await api.delete(`/clients/${client.id}`);
+      await api.delete(`/clients/${target.id}`);
+      setDeleteTarget(null);
       load(page, search);
     } catch (err) {
-      setLoadError(errorMessage(err, "Gagal menghapus klien."));
+      setDeleteError(errorMessage(err, "Gagal menghapus klien."));
     }
   }
 
@@ -244,6 +256,17 @@ export default function ClientsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus klien"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
