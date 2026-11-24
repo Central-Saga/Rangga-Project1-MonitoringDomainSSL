@@ -30,7 +30,7 @@ class Project extends Model
     }
 
     /**
-     * @return BelongsTo<Client, Project>
+     * @return BelongsTo<Client, $this>
      */
     public function client(): BelongsTo
     {
@@ -38,7 +38,7 @@ class Project extends Model
     }
 
     /**
-     * @return HasMany<Asset>
+     * @return HasMany<Asset, $this>
      */
     public function assets(): HasMany
     {

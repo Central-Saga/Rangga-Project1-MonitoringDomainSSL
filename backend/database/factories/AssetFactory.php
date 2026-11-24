@@ -34,14 +34,14 @@ class AssetFactory extends Factory
             'expired_date' => fake()->dateTimeBetween('-15 days', '+60 days'),
             'auto_renew' => fake()->boolean(20),
             'status' => AssetStatus::Active,
-            'metadata' => fn (array $attributes): ?array => $this->metadataForType(AssetType::from($attributes['type'] instanceof AssetType ? $attributes['type']->value : $attributes['type'])),
+            'metadata' => fn (array $attributes): array => $this->metadataForType(AssetType::from($attributes['type'] instanceof AssetType ? $attributes['type']->value : $attributes['type'])),
         ];
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function metadataForType(AssetType $type): ?array
+    private function metadataForType(AssetType $type): array
     {
         return match ($type) {
             AssetType::Domain => [

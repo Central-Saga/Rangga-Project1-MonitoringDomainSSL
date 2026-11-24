@@ -5,6 +5,22 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property mixed $id
+ * @property mixed $asset_id
+ * @property mixed $renewed_by
+ * @property mixed $renewedBy
+ * @property mixed $renewal_date
+ * @property mixed $previous_expired_date
+ * @property mixed $new_expired_date
+ * @property mixed $cost
+ * @property mixed $invoice_number
+ * @property mixed $payment_method
+ * @property mixed $status
+ * @property mixed $status_label
+ * @property mixed $notes
+ * @property mixed $created_at
+ */
 class RenewalResource extends JsonResource
 {
     /**

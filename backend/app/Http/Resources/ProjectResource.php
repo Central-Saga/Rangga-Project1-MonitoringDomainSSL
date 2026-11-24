@@ -5,6 +5,18 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property mixed $id
+ * @property mixed $client_id
+ * @property mixed $name
+ * @property mixed $description
+ * @property mixed $status
+ * @property mixed $status_label
+ * @property mixed $start_date
+ * @property mixed $end_date
+ * @property mixed $created_at
+ * @property mixed $updated_at
+ */
 class ProjectResource extends JsonResource
 {
     /**

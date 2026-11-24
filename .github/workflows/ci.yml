@@ -37,6 +37,9 @@ jobs:
       - name: Lint (Pint)
         run: ./vendor/bin/pint --test
 
+      - name: Static analysis (Larastan/PHPStan)
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
       - name: Static check (config + route cache)
         run: |
           php artisan config:cache

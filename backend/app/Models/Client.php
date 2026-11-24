@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'company', 'email', 'phone', 'address'])]
@@ -35,7 +36,7 @@ class Client extends Model
     }
 
     /**
-     * @return HasMany<Project>
+     * @return HasMany<Project, $this>
      */
     public function projects(): HasMany
     {
@@ -45,7 +46,7 @@ class Client extends Model
     /**
      * Akun user ber-role client milik klien ini.
      *
-     * @return HasMany<User>
+     * @return HasMany<User, $this>
      */
     public function users(): HasMany
     {
@@ -55,9 +56,9 @@ class Client extends Model
     /**
      * Seluruh aset infrastruktur lintas proyek milik klien ini.
      *
-     * @return HasMany<Asset>
+     * @return HasManyThrough<Asset, Project, $this>
      */
-    public function assets(): HasMany
+    public function assets(): HasManyThrough
     {
         return $this->hasManyThrough(Asset::class, Project::class);
     }
