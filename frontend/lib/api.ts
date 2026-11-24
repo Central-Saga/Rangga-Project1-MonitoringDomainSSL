@@ -8,13 +8,17 @@
  * - invalidasi cache lokal setelah mutasi (4.10)
  * - error API berbentuk discriminated union (1.10)
  * - terjemahan pesan error backend (13.8)
+ * - validasi runtime semua respons lewat zod di boundary (1.4)
  */
+
+import type { ZodTypeAny } from "zod";
+import { responseSchemaFor } from "./schemas";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 const DEFAULT_TIMEOUT_MS = 10_000;
 export const UNAUTHORIZED_EVENT = "auth:unauthorized";
 
-export type ApiErrorKind = "network" | "timeout" | "validation" | "unauthorized" | "csrf" | "http";
+export type ApiErrorKind = "network" | "timeout" | "validation" | "unauthorized" | "csrf" | "http" | "contract";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -43,8 +47,13 @@ export interface HttpApiError extends ApiError {
   readonly kind: "http" | "csrf" | "unauthorized";
 }
 
+/** Respons 2xx tapi bentuknya menyalahi kontrak API (audit 1.4). */
+export interface ContractApiError extends ApiError {
+  readonly kind: "contract";
+}
+
 /** Discriminated union untuk pemetaan error di UI (audit 1.10). */
-export type ApiFailure = NetworkApiError | ValidationApiError | HttpApiError;
+export type ApiFailure = NetworkApiError | ValidationApiError | HttpApiError | ContractApiError;
 
 export function isValidationError(error: unknown): error is ValidationApiError {
   return error instanceof ApiError && error.kind === "validation";
@@ -52,6 +61,10 @@ export function isValidationError(error: unknown): error is ValidationApiError {
 
 export function isNetworkError(error: unknown): error is NetworkApiError {
   return error instanceof ApiError && (error.kind === "network" || error.kind === "timeout");
+}
+
+export function isContractError(error: unknown): error is ContractApiError {
+  return error instanceof ApiError && error.kind === "contract";
 }
 
 function classify(status: number): ApiErrorKind {
@@ -101,6 +114,8 @@ export interface RequestOptions extends Omit<RequestInit, "body" | "signal"> {
   timeoutMs?: number;
   dedupe?: boolean;
   retries?: number;
+  /** Skema zod eksplisit; tanpa ini dipilih otomatis dari method + path. */
+  schema?: ZodTypeAny;
 }
 
 /** Gabungkan signal eksternal dengan timer internal tanpa AbortSignal.any. */
@@ -242,10 +257,35 @@ async function rawRequest(path: string, options: RequestOptions = {}): Promise<R
   return promise;
 }
 
+function contractError(status: number, detail: string): ApiError {
+  return new ApiError(status, `Respons API tidak sesuai kontrak (${detail}).`, undefined, "contract");
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const res = await rawRequest(path, options);
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+
+  // Boundary validasi (audit 1.4): JSON diparsing aman lalu diverifikasi zod
+  // sebelum dipercaya sebagai T. Tidak ada cast langsung dari `res.json()`.
+  let payload: unknown;
+  try {
+    payload = await res.json();
+  } catch {
+    throw contractError(res.status, "body bukan JSON");
+  }
+
+  const method = options.method ?? "GET";
+  const schema = options.schema ?? responseSchemaFor(method, path);
+  const parsed = schema.safeParse(payload);
+
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const location = issue?.path.map(String).join(".") || "body";
+    const expected = issue?.message ?? "bentuk tidak dikenal";
+    throw contractError(res.status, `${location}: ${expected}`);
+  }
+
+  return parsed.data as T;
 }
 
 export const api = {
