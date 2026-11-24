@@ -1,0 +1,97 @@
+# Manifest audit 496 — Project 1
+# Dipakai auditor untuk menemukan stack, akun uji, dokumen, dan perintah verifikasi.
+# Semua path relatif terhadap root repository ini.
+
+version: 1
+
+project:
+  name: "Sistem Monitoring Domain, Hosting & SSL"
+  owner: "ranggane131-del"
+  repository: "Central-Saga/Rangga-Project1-MonitoringDomainSSL"
+  description: "Monitoring masa aktif domain, hosting, SSL, dan VPS beserta riwayat perpanjangannya."
+
+stack:
+  backend:
+    path: backend
+    framework: laravel
+    language: php
+    php: ">=8.3"
+    entrypoint: backend/artisan
+    env_example: backend/.env.example
+  frontend:
+    path: frontend
+    framework: next.js
+    language: typescript
+    node: ">=22"
+    entrypoint: frontend/package.json
+
+compose:
+  file: compose.yaml
+  command: "docker compose -f compose.yaml up -d --build"
+  services:
+    - db
+    - redis
+    - mailpit
+    - backend
+    - queue
+    - scheduler
+    - frontend
+  health_url: "http://localhost:8000/up"
+
+# Akun uji. Password dibaca dari environment variable SEED_PASSWORD yang
+# dideklarasikan di .env.example dan backend/.env.example (default: password).
+seed_password_env: SEED_PASSWORD
+seed_password_file: .env.example
+seed_accounts:
+  - role: admin
+    email: admin@example.com
+    password_env: SEED_PASSWORD
+  - role: staff
+    email: staff@example.com
+    password_env: SEED_PASSWORD
+  - role: client
+    email: client@example.com
+    password_env: SEED_PASSWORD
+
+docs:
+  audit: docs/AUDIT.md
+  prd: docs/PRD.md
+  erd: ERD.md
+  readme: README.md
+  evidence: docs/AUDIT-EVIDENCE.md
+
+acceptance_criteria:
+  - id: AC-01
+    name: "Autentikasi & akun uji per role"
+    test: backend/tests/Feature/AuthLoginTest.php
+  - id: AC-02
+    name: "RBAC"
+    test: backend/tests/Feature/RoleMatrixTest.php
+  - id: AC-03
+    name: "Resource API di /api dan /api/v1"
+    test: backend/tests/Feature/ApiRouteCoverageTest.php
+  - id: AC-04
+    name: "Alert H-30 / H-7 / expired"
+    test: backend/tests/Feature/AssetExpiryAlertTest.php
+  - id: AC-05
+    name: "Riwayat perpanjangan"
+    test: backend/tests/Feature/RenewalInvoicePreviewTest.php
+  - id: AC-06
+    name: "Dashboard"
+    test: backend/tests/Feature/DashboardSummaryTest.php
+  - id: AC-07
+    name: "Kontrak & validasi response"
+    test: frontend/tests/api-response-contract.test.ts
+  - id: AC-08
+    name: "Kesiapan operasional"
+    test: backend/tests/Feature/HealthReadinessTest.php
+  - id: AC-09
+    name: "Eksekusi bersih & prasyarat audit"
+    test: backend/tests/Feature/DocumentationReadinessTest.php
+
+commands:
+  setup: "docker compose -f compose.yaml up -d --build"
+  health: "curl -fsS http://localhost:8000/up"
+  backend_test: "cd backend && php artisan test"
+  frontend_test: "cd frontend && npm test"
+  audit_verify: "cd backend && php artisan audit:verify"

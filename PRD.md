@@ -232,3 +232,20 @@ Berikut dokumentasi wajib yang akan tersedia di repository **Central-Saga/csm-do
 | 8. | **RBAC Diterapkan Dengan Baik** | Hak akses dibatasi per role menggunakan Laravel Sanctum + FormRequest + Policy sesuai pembagian akses yang telah ditetapkan. |
 | 9. | **Migration + Seeder Tersedia** | Seluruh tabel dibuat melalui Migration, dilengkapi dengan Seeder untuk data dummy demo sesuai persyaratan. |
 | 10. | **Siap Dijalankan Melalui Podman Compose** | Seluruh service dapat dijalankan dengan perintah **`podman-compose up` sekali jalan** sesuai spesifikasi teknis wajib. |
+
+## 7. LAMPIRAN — ACCEPTANCE CRITERIA (AC-01 … AC-09)
+
+Bagian ini ditambahkan untuk memenuhi prasyarat audit 496 (`#92`). Rincian,
+test pembuktian, dan status terkini ada di [`docs/PRD.md`](docs/PRD.md).
+
+| ID | Acceptance criteria | Test pembuktian |
+|---|---|---|
+| **AC-01** | Login berhasil untuk `admin@example.com`, `staff@example.com`, `client@example.com` memakai `SEED_PASSWORD`. | `backend/tests/Feature/AuthLoginTest.php` |
+| **AC-02** | RBAC: admin/staff/client hanya mengakses sesuai role. | `backend/tests/Feature/RoleMatrixTest.php`, `RenewalAccessTest.php` |
+| **AC-03** | Resource API terdaftar di `/api` dan `/api/v1`. | `backend/tests/Feature/ApiRouteCoverageTest.php` |
+| **AC-04** | Alert H-30 / H-7 / expired dan deduplikasi job. | `backend/tests/Feature/AssetExpiryAlertTest.php`, `QueueReadinessTest.php` |
+| **AC-05** | Riwayat perpanjangan terhubung ke aset dan preview invoice benar. | `backend/tests/Feature/RenewalInvoicePreviewTest.php` |
+| **AC-06** | Dashboard menampilkan ringkasan sesuai data. | `backend/tests/Feature/DashboardSummaryTest.php` |
+| **AC-07** | Response API divalidasi zod di boundary frontend. | `frontend/tests/api-response-contract.test.ts` |
+| **AC-08** | Health/readiness mendalam, audit trail tamper-evident, failed jobs dipangkas. | `backend/tests/Feature/HealthReadinessTest.php`, `AuditTrailTest.php` |
+| **AC-09** | Eksekusi bersih ≤ 15 menit dan prasyarat audit lengkap. | `backend/tests/Feature/DocumentationReadinessTest.php` |
