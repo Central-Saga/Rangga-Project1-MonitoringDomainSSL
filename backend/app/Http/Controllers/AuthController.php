@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -20,14 +18,9 @@ class AuthController extends Controller
     /**
      * Registrasi user baru (role client) dan terbitkan token Sanctum lewat cookie.
      */
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, AuthService $service): JsonResponse
     {
-        $user = User::query()->create([
-            ...$request->validated(),
-            'role' => UserRole::Client,
-        ]);
-
-        $token = $user->createToken('api')->plainTextToken;
+        ['user' => $user, 'token' => $token] = $service->register($request->validated());
 
         return $this->withAuthCookies(
             response()->json([
@@ -42,21 +35,9 @@ class AuthController extends Controller
      *
      * @throws ValidationException
      */
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, AuthService $service): JsonResponse
     {
-        $credentials = $request->validated();
-
-        $user = User::query()->where('email', $credentials['email'])->first();
-
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Email atau password salah.'],
-            ]);
-        }
-
-        $user->tokens()->delete();
-
-        $token = $user->createToken('api')->plainTextToken;
+        ['user' => $user, 'token' => $token] = $service->login($request->validated());
 
         return $this->withAuthCookies(
             response()->json([
@@ -83,11 +64,9 @@ class AuthController extends Controller
     /**
      * Ganti password dan cabut seluruh token (akses lama langsung mati).
      */
-    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    public function changePassword(ChangePasswordRequest $request, AuthService $service): JsonResponse
     {
-        $user = $request->user();
-        $user->update(['password' => $request->validated('password')]);
-        $user->tokens()->delete();
+        $service->changePassword($request->user(), (string) $request->validated('password'));
 
         return response()->json(['message' => 'Password berhasil diubah. Silakan login kembali.']);
     }
