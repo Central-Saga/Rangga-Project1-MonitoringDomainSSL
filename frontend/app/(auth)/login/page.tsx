@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
@@ -7,5 +8,11 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  // LoginForm memakai useSearchParams() untuk membaca ?next=, jadi harus
+  // berada di dalam Suspense boundary supaya tetap bisa di-prerender.
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
 }

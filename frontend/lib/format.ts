@@ -35,7 +35,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
 
 export function formatRupiah(value: string | number | null | undefined): string {
   const num = Number(value ?? 0);
-  return Number.isFinite(num) ? currencyFormatter.format(num) : "Rp 0";
+
+  // Intl id-ID memakai non-breaking space setelah "Rp"; normalisasi agar
+  // assert dan salin-tempel menghasilkan spasi ASCII yang konsisten.
+  return Number.isFinite(num) ? currencyFormatter.format(num).replace(/\u00a0/g, " ") : "Rp 0";
 }
 
 export function formatNumber(value: string | number | null | undefined): string {
