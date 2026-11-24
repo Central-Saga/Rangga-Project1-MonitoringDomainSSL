@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AssetStatus;
+use App\Jobs\SendExpiringAssetAlert;
 use App\Models\Asset;
 use App\Models\User;
 use App\Notifications\ExpiringAssetAlert;
@@ -49,7 +50,12 @@ class AssetExpiryService
                         }
 
                         foreach ($recipients as $recipient) {
-                            $recipient->notify(new ExpiringAssetAlert($asset, $level));
+                            // Job unik mencegah alert dobel bila scheduler/Worker
+                            // bertumpang tindih (audit #113).
+                            SendExpiringAssetAlert::dispatch(
+                                $recipient,
+                                new ExpiringAssetAlert($asset, $level)
+                            );
                         }
 
                         $sent[$level]++;
