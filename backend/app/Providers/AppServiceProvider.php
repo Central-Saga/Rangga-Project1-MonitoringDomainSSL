@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\Http\HealthCheck;
 use App\Services\AssetExpiryService;
+use App\Services\AuditTrail;
 use App\Services\AuthService;
+use App\Services\HealthCheckService;
 use App\Services\RenewalService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\HealthCheck as BaseHealthCheck;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RenewalService::class, fn (): RenewalService => new RenewalService);
         $this->app->bind(AuthService::class, fn (): AuthService => new AuthService);
         $this->app->bind(AssetExpiryService::class, fn (): AssetExpiryService => new AssetExpiryService);
+        $this->app->singleton(AuditTrail::class);
+        $this->app->singleton(HealthCheckService::class);
+
+        // Probe /up memakai implementasi aplikasi yang memeriksa DB/Redis/queue.
+        $this->app->bind(BaseHealthCheck::class, HealthCheck::class);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RenewalStatus;
+use App\Models\Concerns\RecordsAuditTrail;
 use Database\Factories\RenewalFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Renewal extends Model
 {
     /** @use HasFactory<RenewalFactory> */
-    use HasFactory;
+    use HasFactory, RecordsAuditTrail;
 
     /**
      * @return array<string, string>
