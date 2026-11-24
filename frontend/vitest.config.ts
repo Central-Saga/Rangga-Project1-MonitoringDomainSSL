@@ -10,11 +10,30 @@ export default defineConfig({
     },
   },
   test: {
+    globals: true,
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
-    include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules/**", ".next/**", "public/**"],
+    include: [
+      "lib/**/*.test.ts",
+      "lib/**/*.test.tsx",
+      "components/**/*.test.ts",
+      "components/**/*.test.tsx",
+      "tests/**/*.test.ts",
+      "tests/**/*.test.tsx",
+    ],
+    exclude: ["node_modules/**", "playwright/**", ".next/**", "public/**"],
     css: false,
     restoreMocks: true,
+    coverage: {
+      reporter: ["text", "json", "html"],
+      thresholds: {
+        global: {
+          branches: 60,
+          functions: 60,
+          lines: 60,
+          statements: 60,
+        },
+      },
+    },
   },
 });

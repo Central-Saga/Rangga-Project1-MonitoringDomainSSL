@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError, firstMessages } from "@/lib/api";
+import { validateLogin } from "@/lib/validation";
 import { safeNextPath } from "@/lib/redirect";
 import { TextField } from "@/components/auth/TextField";
 import { ErrorAlert } from "@/components/ErrorAlert";
@@ -52,6 +53,11 @@ export function LoginForm() {
   async function doLogin(mail: string, pass: string) {
     setFormError(null);
     setErrors({});
+    const clientErrors = validateLogin({ email: mail, password: pass });
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     setSubmitting(true);
     try {
       await login(mail, pass, nextPath);
@@ -146,7 +152,7 @@ export function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-soft">
         Belum punya akun?{" "}
-        <Link href="/register" className="font-medium text-accent hover:underline">
+        <Link href="/register" className="inline-flex min-h-11 items-center font-medium text-accent hover:underline">
           Daftar
         </Link>
       </p>

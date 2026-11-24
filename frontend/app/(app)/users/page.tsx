@@ -2,10 +2,13 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, firstMessages, isValidationError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Client, Paginated, User } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateUser } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -32,7 +35,10 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<User | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
@@ -60,6 +66,7 @@ export default function UsersPage() {
     setEditing(null);
     setForm(emptyForm);
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -73,6 +80,7 @@ export default function UsersPage() {
       client_id: user.client_id ? String(user.client_id) : "",
     });
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -80,6 +88,23 @@ export default function UsersPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    const clientErrors = validateUser(
+      {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        clientId: form.client_id,
+      },
+      { passwordRequired: !editing }
+    );
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload: Record<string, unknown> = {
       name: form.name,
       email: form.email,
@@ -91,27 +116,33 @@ export default function UsersPage() {
       if (editing) {
         await api.put(`/users/${editing.id}`, payload);
       } else {
-        if (!form.password) {
-          setError("Password wajib untuk pengguna baru.");
-          setSaving(false);
-          return;
-        }
         payload.password = form.password;
         await api.post("/users", payload);
       }
       setModalOpen(false);
+      setFieldErrors({});
       load(page);
     } catch (err) {
+      setFieldErrors(isValidationError(err) ? firstMessages(err.errors) : {});
       setError(err instanceof ApiError ? err.message : "Gagal menyimpan.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete(user: User) {
-    if (!confirm(`Hapus pengguna "${user.name}"?`)) return;
-    await api.delete(`/users/${user.id}`);
-    load(page);
+  function onDelete(user: User) {
+    setDeleteError(null);
+    setDeleteTarget({ id: user.id, label: user.name });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
+    try {
+      await api.delete(`/users/${target.id}`);
+      setDeleteTarget(null);
+      load(page);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Gagal menghapus pengguna.");
+    }
   }
 
   if (authLoading || me?.role !== "admin") return <Spinner />;
@@ -191,6 +222,7 @@ export default function UsersPage() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Email *</label>
@@ -201,6 +233,7 @@ export default function UsersPage() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.email} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">
@@ -212,6 +245,7 @@ export default function UsersPage() {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.password} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Role *</label>
@@ -224,6 +258,7 @@ export default function UsersPage() {
               <option value="staff">Staff</option>
               <option value="client">Client</option>
             </select>
+            <FieldError message={fieldErrors.role} />
           </div>
           {form.role === "client" && (
             <div>
@@ -241,6 +276,7 @@ export default function UsersPage() {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.client_id} />
             </div>
           )}
           <button
@@ -252,6 +288,17 @@ export default function UsersPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus pengguna"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

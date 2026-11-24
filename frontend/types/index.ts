@@ -35,7 +35,7 @@ export interface Project {
 }
 
 export type AssetType = "domain" | "hosting" | "ssl" | "vps";
-export type AssetStatus = "active" | "expired" | "suspended";
+export type AssetStatus = "active" | "expired" | "suspended" | "on_hold" | "completed" | "paid" | "pending";
 
 export interface Asset {
   id: number;

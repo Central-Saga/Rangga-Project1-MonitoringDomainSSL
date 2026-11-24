@@ -11,7 +11,7 @@ class AuthRegisterTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_register_creates_a_client_user_and_issues_a_token(): void
+    public function test_register_creates_a_client_user_and_sets_auth_cookies(): void
     {
         $response = $this->postJson('/api/auth/register', [
             'name' => 'Pelanggan Baru',
@@ -23,11 +23,30 @@ class AuthRegisterTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('user.email', 'baru@example.com')
             ->assertJsonPath('user.role', 'client')
-            ->assertJsonStructure(['token', 'user']);
+            ->assertJsonMissingPath('token')
+            ->assertJsonStructure(['user'])
+            ->assertCookie('token')
+            ->assertCookie('XSRF-TOKEN');
 
         $user = User::query()->where('email', 'baru@example.com')->firstOrFail();
         $this->assertSame(UserRole::Client, $user->role);
         $this->assertCount(1, $user->tokens);
+    }
+
+    public function test_register_ignores_role_payload_from_request(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Pelanggan Baru',
+            'email' => 'role@example.com',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+            'role' => 'admin',
+        ]);
+
+        $response->assertCreated()->assertJsonPath('user.role', 'client');
+
+        $user = User::query()->where('email', 'role@example.com')->firstOrFail();
+        $this->assertSame(UserRole::Client, $user->role);
     }
 
     public function test_register_rejects_an_email_that_is_already_taken(): void

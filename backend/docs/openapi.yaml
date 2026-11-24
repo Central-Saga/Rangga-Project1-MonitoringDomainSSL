@@ -1,0 +1,345 @@
+openapi: 3.0.3
+info:
+  title: Monitoring Infra API
+  version: 1.0.0
+  description: >
+    Kontrak API untuk monitoring domain, hosting, SSL, dan VPS.
+    Semua endpoint tersedia di dua prefix: `/api` (legacy) dan `/api/v1` (kanonik).
+    Spesifikasi ini mengikuti `routes/api.php`; perubahan route wajib memperbarui file ini.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Versi kanonik (disarankan)
+  - url: http://localhost:8000/api
+    description: Prefix legacy (kompatibilitas)
+security:
+  - sanctum: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrasi user client baru
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string, maxLength: 255 }
+                email: { type: string, format: email, maxLength: 255 }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        '201':
+          description: User dibuat; header Location = /api/v1/auth/me
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login dan terbitkan token Sanctum lewat cookie HttpOnly
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cabut seluruh token dan hapus cookie auth
+      responses:
+        '200': { description: Berhasil logout }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil user aktif
+      responses:
+        '200':
+          description: Profil user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Ringkasan aset (scope sesuai role)
+      responses:
+        '200':
+          description: Ringkasan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary: { type: object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /clients:
+    get:
+      tags: [Clients]
+      summary: Daftar client (paginasi)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/Sort'
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Paginated' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Clients]
+      summary: Buat client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 255 }
+                company: { type: string, nullable: true }
+                email: { type: string, format: email, nullable: true }
+                phone: { type: string, nullable: true }
+                address: { type: string, nullable: true }
+      responses:
+        '201':
+          description: Client dibuat; header Location = /api/v1/clients/{id}
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /clients/{client}:
+    parameters:
+      - $ref: '#/components/parameters/NumericId'
+    get:
+      tags: [Clients]
+      summary: Detail client
+      responses:
+        '200': { description: Detail client }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Clients]
+      summary: Perbarui client
+      responses:
+        '200': { description: Client diperbarui }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Clients]
+      summary: Hapus client (soft delete)
+      responses:
+        '204': { description: Berhasil dihapus }
+  /projects:
+    get:
+      tags: [Projects]
+      summary: Daftar proyek (paginasi)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200': { $ref: '#/components/responses/Paginated' }
+    post:
+      tags: [Projects]
+      summary: Buat proyek
+      responses:
+        '201':
+          description: Proyek dibuat; header Location = /api/v1/projects/{id}
+          headers:
+            Location: { schema: { type: string, format: uri } }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /assets:
+    get:
+      tags: [Assets]
+      summary: Daftar aset (paginasi, filter type/status/project_id/expiring_in)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200': { $ref: '#/components/responses/Paginated' }
+    post:
+      tags: [Assets]
+      summary: Buat aset
+      responses:
+        '201':
+          description: Aset dibuat; header Location = /api/v1/assets/{id}
+          headers:
+            Location: { schema: { type: string, format: uri } }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /assets/{asset}/renewals:
+    parameters:
+      - $ref: '#/components/parameters/NumericId'
+    get:
+      tags: [Renewals]
+      summary: Riwayat perpanjangan satu aset
+      responses:
+        '200': { description: Daftar renewal }
+    post:
+      tags: [Renewals]
+      summary: Catat perpanjangan baru (transaksional)
+      responses:
+        '201':
+          description: Renewal dibuat; header Location = /api/v1/renewals/{id}
+          headers:
+            Location: { schema: { type: string, format: uri } }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /users:
+    get:
+      tags: [Users]
+      summary: Daftar user (admin/staff; paginasi)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200': { $ref: '#/components/responses/Paginated' }
+    post:
+      tags: [Users]
+      summary: Buat user (admin only)
+      responses:
+        '201':
+          description: User dibuat; header Location = /api/v1/users/{id}
+          headers:
+            Location: { schema: { type: string, format: uri } }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Daftar notifikasi milik user aktif
+      responses:
+        '200': { description: Daftar notifikasi + unread_count }
+  /reports/expiring-assets/pdf:
+    get:
+      tags: [Reports]
+      summary: Unduh laporan aset mendekati kedaluwarsa (PDF)
+      parameters:
+        - name: days
+          in: query
+          schema: { type: integer, default: 30 }
+      responses:
+        '200':
+          description: PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+components:
+  securitySchemes:
+    sanctum:
+      type: apiKey
+      in: cookie
+      name: token
+      description: Token Sanctum dikirim lewat cookie HttpOnly; CSRF memakai cookie XSRF-TOKEN.
+  parameters:
+    NumericId:
+      name: id
+      in: path
+      required: true
+      description: Parameter path dibatasi hanya angka.
+      schema: { type: integer }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 15 }
+    Sort:
+      name: sort
+      in: query
+      schema: { type: string }
+      description: Hanya kolom yang diizinkan per endpoint.
+  responses:
+    Paginated:
+      description: Halaman data
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, links, meta]
+            properties:
+              data: { type: array, items: { type: object } }
+              links: { type: object }
+              meta: { type: object }
+    ValidationError:
+      description: Validasi gagal
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message, errors]
+            properties:
+              message: { type: string }
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: { type: string }
+    Unauthorized:
+      description: Belum terautentikasi
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message: { type: string }
+    NotFound:
+      description: Data tidak ditemukan
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message: { type: string }
+  schemas:
+    Client:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        company: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        projects_count: { type: integer }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [admin, staff, client] }
+        client_id: { type: integer, nullable: true }

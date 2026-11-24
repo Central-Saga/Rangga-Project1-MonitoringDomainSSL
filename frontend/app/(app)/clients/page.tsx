@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, errorMessage } from "@/lib/api";
+import { api, errorMessage, firstMessages, isValidationError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import type { Client, Paginated } from "@/types";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateClient } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -24,7 +27,10 @@ export default function ClientsPage() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1, search = "") => {
     setLoading(true);
@@ -50,6 +56,7 @@ export default function ClientsPage() {
     setEditing(null);
     setForm(emptyForm);
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -63,6 +70,7 @@ export default function ClientsPage() {
       address: client.address ?? "",
     });
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -70,6 +78,19 @@ export default function ClientsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    const clientErrors = validateClient({
+      name: form.name,
+      company: form.company,
+      email: form.email,
+      phone: form.phone,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     try {
       if (editing) {
         await api.put(`/clients/${editing.id}`, form);
@@ -77,21 +98,32 @@ export default function ClientsPage() {
         await api.post("/clients", form);
       }
       setModalOpen(false);
+      setFieldErrors({});
       load(page, search);
     } catch (err) {
+      setFieldErrors(isValidationError(err) ? firstMessages(err.errors) : {});
       setError(errorMessage(err, "Gagal menyimpan."));
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete(client: Client) {
-    if (!confirm(`Hapus klien "${client.name}"? Proyek terkait ikut terhapus.`)) return;
+  function onDelete(client: Client) {
+    setDeleteError(null);
+    setDeleteTarget({
+      id: client.id,
+      label: client.name,
+      detail: "Proyek dan aset terkait ikut terhapus.",
+    });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
     try {
-      await api.delete(`/clients/${client.id}`);
+      await api.delete(`/clients/${target.id}`);
+      setDeleteTarget(null);
       load(page, search);
     } catch (err) {
-      setLoadError(errorMessage(err, "Gagal menghapus klien."));
+      setDeleteError(errorMessage(err, "Gagal menghapus klien."));
     }
   }
 
@@ -198,6 +230,7 @@ export default function ClientsPage() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Perusahaan</label>
@@ -206,6 +239,7 @@ export default function ClientsPage() {
               onChange={(e) => setForm({ ...form, company: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.company} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -216,6 +250,7 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.email} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Telepon</label>
@@ -224,6 +259,7 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.phone} />
             </div>
           </div>
           <div>
@@ -244,6 +280,17 @@ export default function ClientsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus klien"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

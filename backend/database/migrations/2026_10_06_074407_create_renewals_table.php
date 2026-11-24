@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('renewals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_id')->constrained()->cascadeOnDelete();
+            $table->index('asset_id');
             $table->foreignId('renewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->index('renewed_by');
             $table->date('renewal_date');
             $table->date('previous_expired_date');
             $table->date('new_expired_date');

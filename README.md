@@ -30,6 +30,7 @@ dan CI GitHub Actions (Pint + PHPUnit + Vite build) aktif.
 ├── PROJECT2.md       # Deliverable Project 2 (link, cara run, bukti)
 ├── PRD.md            # Product Requirements Document (Project 1)
 ├── ERD.md            # Entity Relationship Diagram (Project 1)
+├── compose.yaml      # Docker Compose (app + db + cache + mailpit)
 └── podman-compose.yml
 ```
 
@@ -38,3 +39,60 @@ dan CI GitHub Actions (Pint + PHPUnit + Vite build) aktif.
 - [`PROJECT2.md`](PROJECT2.md) — deliverable Project 2 + bukti verifikasi
 - [`PRD.md`](PRD.md) — kebutuhan produk Project 1
 - [`ERD.md`](ERD.md) — rancangan data Project 1
+
+## Cara Menjalankan Bersih (Clean Execution)
+
+### Prasyarat
+- [Docker](https://www.docker.com/) dan [Docker Compose] terinstall
+- [Node.js](https://nodejs.org/) (versi 18+)
+- [PHP](https://www.php.net/) 8.2+
+- [Composer](https://getcomposer.org/) terinstall
+
+### Project 1 — Monitoring Domain, Hosting & SSL
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/Central-Saga/Rangga-Project1-MonitoringDomainSSL.git
+   cd Rangga-Project1-MonitoringDomainSSL
+   ```
+
+2. **Setup Backend (Laravel)**
+   ```bash
+   cd backend
+   cp .env.example .env
+   composer install
+   php artisan key:generate
+   php artisan storage:link
+   ```
+
+3. **Setup Frontend (Next.js)**
+   ```bash
+   cd ../frontend
+   npm install
+   npm run build
+   ```
+
+4. **Jalankan Aplikasi**
+   ```bash
+   # Dari root folder
+   docker compose -f compose.yaml up -d
+    docker compose -f compose.yaml ps
+    curl -fsS http://localhost:8000/up
+   # Atau secara manual:
+   # - Backend: php artisan serve --port=8000
+   # - Frontend: npm run dev (akses di http://localhost:3000)
+   ```
+
+5. **Jalankan Test**
+   ```bash
+   # Backend
+   cd backend
+   php artisan test
+
+   # Frontend
+   cd frontend
+   npm test
+   ```
+
+### Project 2 — Web Portfolio
+*Lihat dokumentasi lengkap di [`PROJECT2.md`](PROJECT2.md)*

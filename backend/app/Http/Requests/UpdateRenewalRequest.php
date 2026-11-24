@@ -32,6 +32,7 @@ class UpdateRenewalRequest extends FormRequest
             'payment_method' => ['nullable', 'string', 'max:100'],
             'status' => ['sometimes', Rule::enum(RenewalStatus::class)],
             'notes' => ['nullable', 'string'],
+            'invoice_file' => ['nullable', 'file', 'mimetypes:application/pdf,image/png,image/jpeg', 'dimensions:max_width=4000,max_height=4000', 'max:5120'],
         ];
     }
 }

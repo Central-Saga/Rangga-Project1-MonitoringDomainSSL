@@ -59,7 +59,7 @@
         </tr>
         <tr>
             <th>Biaya</th>
-            <td class="total">Rp {{ number_format((float) $renewal->cost, 0, ',', '.') }}</td>
+            <td class="total">Rp {{ number_format((int) $renewal->cost, 0, ',', '.') }}</td>
         </tr>
     </table>
 

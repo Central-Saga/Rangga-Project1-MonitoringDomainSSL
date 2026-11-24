@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError, firstMessages } from "@/lib/api";
+import { validateRegister } from "@/lib/validation";
 import { TextField } from "@/components/auth/TextField";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
@@ -26,6 +27,11 @@ export function RegisterForm() {
   async function doRegister() {
     setFormError(null);
     setErrors({});
+    const clientErrors = validateRegister({ name, email, password, passwordConfirmation });
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
     setSubmitting(true);
     try {
       await register({ name, email, password, passwordConfirmation });
@@ -108,7 +114,7 @@ export function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-soft">
         Sudah punya akun?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className="inline-flex min-h-11 items-center font-medium text-accent hover:underline">
           Masuk
         </Link>
       </p>

@@ -131,7 +131,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Konten */}
-      <main className="min-w-0 flex-1 p-4 sm:p-6 md:ml-64 md:p-8">{children}</main>
+      <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 p-4 sm:p-6 outline-none md:ml-64 md:p-8">{children}</main>
     </div>
   );
 }

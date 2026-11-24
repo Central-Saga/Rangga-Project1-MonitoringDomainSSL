@@ -20,7 +20,11 @@ return [
     'allowed_methods' => ['*'],
 
     // 1. Ubah wildcard menjadi URL frontend
-    'allowed_origins' => ['http://localhost:3000'],
+    'allowed_origins' => [
+        'http://localhost:3000',
+        // Port alternatif untuk menjalankan frontend secara lokal (audit 8.7).
+        'http://localhost:3100',
+    ],
 
     'allowed_origins_patterns' => [],
 

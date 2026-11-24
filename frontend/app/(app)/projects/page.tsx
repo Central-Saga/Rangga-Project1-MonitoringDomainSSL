@@ -1,14 +1,18 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, firstMessages, isValidationError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Client, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateProject } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
 import { formatDate, statusColor } from "@/lib/format";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 const emptyForm = {
   client_id: "",
@@ -33,7 +37,10 @@ export default function ProjectsPage() {
   const [editing, setEditing] = useState<Project | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
@@ -59,6 +66,7 @@ export default function ProjectsPage() {
     setEditing(null);
     setForm(emptyForm);
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -73,6 +81,7 @@ export default function ProjectsPage() {
       end_date: project.end_date ?? "",
     });
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -80,8 +89,22 @@ export default function ProjectsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    const clientErrors = validateProject({
+      clientId: form.client_id,
+      name: form.name,
+      startDate: form.start_date,
+      endDate: form.end_date,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...form,
+      description: sanitizeHtml(form.description),
       client_id: Number(form.client_id),
       start_date: form.start_date || null,
       end_date: form.end_date || null,
@@ -93,18 +116,33 @@ export default function ProjectsPage() {
         await api.post("/projects", payload);
       }
       setModalOpen(false);
+      setFieldErrors({});
       load(page);
     } catch (err) {
+      setFieldErrors(isValidationError(err) ? firstMessages(err.errors) : {});
       setError(err instanceof ApiError ? err.message : "Gagal menyimpan.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete(project: Project) {
-    if (!confirm(`Hapus proyek "${project.name}"? Aset terkait ikut terhapus.`)) return;
-    await api.delete(`/projects/${project.id}`);
-    load(page);
+  function onDelete(project: Project) {
+    setDeleteError(null);
+    setDeleteTarget({
+      id: project.id,
+      label: project.name,
+      detail: "Aset terkait ikut terhapus.",
+    });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
+    try {
+      await api.delete(`/projects/${target.id}`);
+      setDeleteTarget(null);
+      load(page);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Gagal menghapus proyek.");
+    }
   }
 
   return (
@@ -207,6 +245,7 @@ export default function ProjectsPage() {
                 </option>
               ))}
             </select>
+            <FieldError message={fieldErrors.client_id} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Nama Proyek *</label>
@@ -216,6 +255,7 @@ export default function ProjectsPage() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Deskripsi</label>
@@ -225,6 +265,7 @@ export default function ProjectsPage() {
               rows={2}
               className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.description} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -238,6 +279,7 @@ export default function ProjectsPage() {
                 <option value="on_hold">Ditahan</option>
                 <option value="completed">Selesai</option>
               </select>
+              <FieldError message={fieldErrors.status} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Mulai</label>
@@ -247,6 +289,7 @@ export default function ProjectsPage() {
                 onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.start_date} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Selesai</label>
@@ -256,6 +299,7 @@ export default function ProjectsPage() {
                 onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.end_date} />
             </div>
           </div>
           <button
@@ -267,6 +311,17 @@ export default function ProjectsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus proyek"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

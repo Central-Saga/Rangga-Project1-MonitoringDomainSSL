@@ -3,25 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssetStatus;
+use App\Http\Concerns\ConstrainsListQueries;
+use App\Http\Concerns\CreatedResponse;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class AssetController extends Controller
 {
+    use ConstrainsListQueries;
+    use CreatedResponse;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Asset::class);
+        $this->validateListQuery($request, ['expired_date', 'created_at', 'name'], ['type', 'status', 'project_id', 'expiring_in', 'search']);
 
         $assets = Asset::query()
+            ->select(['id', 'project_id', 'type', 'name', 'provider', 'renewal_cost', 'billing_cycle', 'start_date', 'expired_date', 'auto_renew', 'status', 'metadata', 'notes', 'created_at', 'updated_at'])
             ->with('project.client')
             ->when($request->user()->isClient(), function (Builder $query) use ($request): void {
                 $query->whereHas('project', fn (Builder $query) => $query->where('client_id', $request->user()->client_id));
@@ -48,7 +56,7 @@ class AssetController extends Controller
                 });
             })
             ->orderBy('expired_date')
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return AssetResource::collection($assets);
@@ -57,11 +65,17 @@ class AssetController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAssetRequest $request): AssetResource
+    public function store(StoreAssetRequest $request): JsonResponse
     {
+        $this->authorize('create', Asset::class);
+
         $asset = Asset::query()->create($request->validated());
 
-        return new AssetResource($asset->load('project.client'));
+        return $this->created(
+            new AssetResource($asset->load('project.client')),
+            'assets.show',
+            $asset
+        );
     }
 
     /**
@@ -82,6 +96,8 @@ class AssetController extends Controller
      */
     public function update(UpdateAssetRequest $request, Asset $asset): AssetResource
     {
+        $this->authorize('update', $asset);
+
         $asset->update($request->validated());
 
         return new AssetResource($asset->load('project.client'));

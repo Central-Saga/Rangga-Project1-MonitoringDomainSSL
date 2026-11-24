@@ -50,7 +50,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Token tidak abadi: default 7 hari (10080 menit), bisa di-override via env.
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 60 * 24 * 7),
 
     /*
     |--------------------------------------------------------------------------

@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, errorMessage } from "@/lib/api";
+import { api, errorMessage, firstMessages, isValidationError } from "@/lib/api";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { useAuth } from "@/lib/auth";
 import type { Asset, Paginated, Project } from "@/types";
 import { Badge } from "@/components/Badge";
+import { ConfirmDialog, type ConfirmTarget } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/shared/ui/FieldError";
+import { validateAsset } from "@/lib/validation";
 import { Modal } from "@/components/Modal";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/Spinner";
@@ -58,7 +61,10 @@ export default function AssetsPage() {
   const [editing, setEditing] = useState<Asset | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConfirmTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(
     async (page = 1) => {
@@ -102,6 +108,7 @@ export default function AssetsPage() {
     setEditing(null);
     setForm(emptyForm);
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -120,6 +127,7 @@ export default function AssetsPage() {
       notes: asset.notes ?? "",
     });
     setError(null);
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -127,6 +135,23 @@ export default function AssetsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setFieldErrors({});
+    const clientErrors = validateAsset({
+      projectId: form.project_id,
+      type: form.type,
+      name: form.name,
+      provider: form.provider,
+      renewalCost: form.renewal_cost,
+      billingCycle: form.billing_cycle,
+      startDate: form.start_date,
+      expiredDate: form.expired_date,
+    });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setError(Object.values(clientErrors)[0] ?? "Periksa input form.");
+      setSaving(false);
+      return;
+    }
     const payload = {
       ...form,
       project_id: Number(form.project_id),
@@ -140,21 +165,28 @@ export default function AssetsPage() {
         await api.post("/assets", payload);
       }
       setModalOpen(false);
+      setFieldErrors({});
       load(page);
     } catch (err) {
+      setFieldErrors(isValidationError(err) ? firstMessages(err.errors) : {});
       setError(errorMessage(err, "Gagal menyimpan."));
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete(asset: Asset) {
-    if (!confirm(`Hapus aset "${asset.name}"?`)) return;
+  function onDelete(asset: Asset) {
+    setDeleteError(null);
+    setDeleteTarget({ id: asset.id, label: asset.name });
+  }
+
+  async function confirmDelete(target: ConfirmTarget) {
     try {
-      await api.delete(`/assets/${asset.id}`);
+      await api.delete(`/assets/${target.id}`);
+      setDeleteTarget(null);
       load(page);
     } catch (err) {
-      setLoadError(errorMessage(err, "Gagal menghapus aset."));
+      setDeleteError(errorMessage(err, "Gagal menghapus aset."));
     }
   }
 
@@ -324,6 +356,7 @@ export default function AssetsPage() {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.project_id} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Tipe *</label>
@@ -337,6 +370,7 @@ export default function AssetsPage() {
                 <option value="ssl">SSL</option>
                 <option value="vps">VPS</option>
               </select>
+              <FieldError message={fieldErrors.type} />
             </div>
           </div>
           <div>
@@ -348,6 +382,7 @@ export default function AssetsPage() {
               placeholder="misal: example.com"
               className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -357,6 +392,7 @@ export default function AssetsPage() {
                 onChange={(e) => setForm({ ...form, provider: e.target.value })}
                 className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.provider} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Biaya Perpanjangan (Rp)</label>
@@ -367,6 +403,7 @@ export default function AssetsPage() {
                 onChange={(e) => setForm({ ...form, renewal_cost: e.target.value })}
                 className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.renewal_cost} />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -380,6 +417,7 @@ export default function AssetsPage() {
                 <option value="monthly">Bulanan</option>
                 <option value="yearly">Tahunan</option>
               </select>
+              <FieldError message={fieldErrors.billing_cycle} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Tgl Mulai</label>
@@ -389,6 +427,7 @@ export default function AssetsPage() {
                 onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.start_date} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Kedaluwarsa *</label>
@@ -399,6 +438,7 @@ export default function AssetsPage() {
                 onChange={(e) => setForm({ ...form, expired_date: e.target.value })}
                 className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
               />
+              <FieldError message={fieldErrors.expired_date} />
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-ink">
@@ -418,6 +458,7 @@ export default function AssetsPage() {
               rows={2}
               className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none placeholder:text-mute"
             />
+            <FieldError message={fieldErrors.notes} />
           </div>
           <button
             type="submit"
@@ -428,6 +469,17 @@ export default function AssetsPage() {
           </button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        target={deleteTarget}
+        title="Konfirmasi hapus aset"
+        error={deleteError}
+        onCancel={() => {
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

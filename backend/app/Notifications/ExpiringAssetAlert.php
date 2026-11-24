@@ -47,7 +47,7 @@ class ExpiringAssetAlert extends Notification implements ShouldQueue
             ->line("**Proyek:** {$this->asset->project?->name}")
             ->line("**Provider:** {$this->asset->provider}")
             ->line("**Tanggal kedaluwarsa:** {$this->asset->expired_date->format('d M Y')}")
-            ->line('**Estimasi biaya perpanjangan:** Rp '.number_format((float) $this->asset->renewal_cost, 0, ',', '.'));
+            ->line('**Estimasi biaya perpanjangan:** Rp '.number_format((int) $this->asset->renewal_cost, 0, ',', '.'));
 
         if ($this->level !== 'expired') {
             $mail->line('Segera lakukan perpanjangan sebelum layanan terhenti.');
