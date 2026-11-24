@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import {
   ApiError,
   INVALIDATION_EVENT,
@@ -7,6 +8,7 @@ import {
   errorMessage,
   firstMessages,
   invalidateApi,
+  isContractError,
   isNetworkError,
   isValidationError,
   resetUnauthorizedFlag,
@@ -101,5 +103,100 @@ describe("api client", () => {
     expect(listener).toHaveBeenCalledTimes(1);
     expect((listener.mock.calls[0][0] as CustomEvent<string>).detail).toBe("/clients");
     window.removeEventListener(INVALIDATION_EVENT, listener);
+  });
+});
+
+const validUser = {
+  id: 1,
+  name: "Admin",
+  email: "admin@example.com",
+  role: "admin",
+  role_label: "Admin",
+  client_id: null,
+  client: null,
+};
+
+const validClient = {
+  id: 1,
+  name: "Acme",
+  company: null,
+  email: null,
+  phone: null,
+  address: null,
+};
+
+describe("validasi respons di boundary (audit 1.4)", () => {
+  it("mengembalikan data valid untuk endpoint yang punya skema", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: validUser })));
+
+    await expect(api.get("/auth/me")).resolves.toMatchObject({ data: { id: 1 } });
+  });
+
+  it("memvalidasi skema dinamis pada path dengan id angka", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: validClient })));
+
+    await expect(api.get("/clients/42")).resolves.toMatchObject({ data: { name: "Acme" } });
+  });
+
+  it("menolak respons terdaftar yang melanggar skema", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: { ...validUser, role: "superuser" } })));
+
+    try {
+      await api.get("/auth/me");
+      throw new Error("tidak boleh berhasil");
+    } catch (error) {
+      expect(isContractError(error)).toBe(true);
+      expect((error as ApiError).message).toContain("data.role");
+    }
+  });
+
+  it("menolak pagination yang kehilangan meta", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: [validClient] })));
+
+    await expect(api.get("/clients")).rejects.toMatchObject({ kind: "contract" });
+  });
+
+  it("tetap memvalidasi endpoint tanpa skema khusus sebagai objek JSON", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ anything: true })));
+
+    await expect(api.get("/endpoint-baru")).resolves.toEqual({ anything: true });
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(42)));
+    await expect(api.get("/endpoint-baru-2")).rejects.toMatchObject({ kind: "contract" });
+  });
+
+  it("menerima session login/register dengan wrapper data", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ user: { data: validUser } })));
+
+    await expect(api.post("/auth/login", {})).resolves.toMatchObject({
+      user: { data: { email: "admin@example.com" } },
+    });
+  });
+
+  it("mengubah body bukan JSON menjadi contract error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => { throw new SyntaxError("invalid json"); },
+    } as unknown as Response));
+
+    await expect(api.get("/rusak")).rejects.toMatchObject({ kind: "contract" });
+  });
+
+  it("tidak memvalidasi body untuk respons 204", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(undefined, 204)));
+
+    await expect(api.delete("/clients/1")).resolves.toBeUndefined();
+  });
+
+  it("menghormati skema eksplisit dari pemanggil", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ total: 3 })));
+
+    await expect(api.get("/kustom", { schema: z.looseObject({ total: z.number() }) }))
+      .resolves.toEqual({ total: 3 });
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ total: "tiga" })));
+    await expect(api.get("/kustom-2", { schema: z.looseObject({ total: z.number() }) }))
+      .rejects.toMatchObject({ kind: "contract" });
   });
 });

@@ -1,0 +1,538 @@
+{
+    "GET \/auth\/me": {
+        "data": {
+            "id": 1,
+            "name": "Lyric Schmidt",
+            "email": "letitia82@example.com",
+            "role": "admin",
+            "role_label": "Admin",
+            "client_id": null,
+            "client": null,
+            "created_at": "2026-11-24T03:40:39+00:00"
+        }
+    },
+    "GET \/dashboard\/summary": {
+        "summary": {
+            "clients": 1,
+            "projects": 1,
+            "assets_total": 1,
+            "assets_by_type": {
+                "ssl": 1
+            },
+            "expiring_in_30_days": 0,
+            "expiring_in_7_days": 0,
+            "expired": 0,
+            "unread_notifications": 1
+        },
+        "countdown": []
+    },
+    "GET \/clients": {
+        "data": [
+            {
+                "id": 1,
+                "name": "Jermaine Legros",
+                "company": "Corkery, Kuhic and Hessel",
+                "email": "baltenwerth@walsh.biz",
+                "phone": "432-702-0774",
+                "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                "projects_count": 1,
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            }
+        ],
+        "links": {
+            "first": "http:\/\/localhost:8000\/api\/clients?page=1",
+            "last": "http:\/\/localhost:8000\/api\/clients?page=1",
+            "prev": null,
+            "next": null
+        },
+        "meta": {
+            "current_page": 1,
+            "from": 1,
+            "last_page": 1,
+            "links": [
+                {
+                    "url": null,
+                    "label": "&laquo; Previous",
+                    "page": null,
+                    "active": false
+                },
+                {
+                    "url": "http:\/\/localhost:8000\/api\/clients?page=1",
+                    "label": "1",
+                    "page": 1,
+                    "active": true
+                },
+                {
+                    "url": null,
+                    "label": "Next &raquo;",
+                    "page": null,
+                    "active": false
+                }
+            ],
+            "path": "http:\/\/localhost:8000\/api\/clients",
+            "per_page": 15,
+            "to": 1,
+            "total": 1
+        }
+    },
+    "GET \/clients\/:id": {
+        "data": {
+            "id": 1,
+            "name": "Jermaine Legros",
+            "company": "Corkery, Kuhic and Hessel",
+            "email": "baltenwerth@walsh.biz",
+            "phone": "432-702-0774",
+            "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+            "projects": [
+                {
+                    "id": 1,
+                    "client_id": 1,
+                    "name": "Website Hand, Nitzsche and Mayer",
+                    "description": "Quo temporibus pariatur sed sint.",
+                    "status": "on_hold",
+                    "status_label": "Ditahan",
+                    "start_date": "2026-03-10",
+                    "end_date": null,
+                    "assets_count": 1,
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                }
+            ],
+            "created_at": "2026-11-24T03:40:40+00:00",
+            "updated_at": "2026-11-24T03:40:40+00:00"
+        }
+    },
+    "GET \/projects": {
+        "data": [
+            {
+                "id": 1,
+                "client_id": 1,
+                "name": "Website Hand, Nitzsche and Mayer",
+                "description": "Quo temporibus pariatur sed sint.",
+                "status": "on_hold",
+                "status_label": "Ditahan",
+                "start_date": "2026-03-10",
+                "end_date": null,
+                "client": {
+                    "id": 1,
+                    "name": "Jermaine Legros",
+                    "company": "Corkery, Kuhic and Hessel",
+                    "email": "baltenwerth@walsh.biz",
+                    "phone": "432-702-0774",
+                    "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                },
+                "assets_count": 1,
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            }
+        ],
+        "links": {
+            "first": "http:\/\/localhost:8000\/api\/projects?page=1",
+            "last": "http:\/\/localhost:8000\/api\/projects?page=1",
+            "prev": null,
+            "next": null
+        },
+        "meta": {
+            "current_page": 1,
+            "from": 1,
+            "last_page": 1,
+            "links": [
+                {
+                    "url": null,
+                    "label": "&laquo; Previous",
+                    "page": null,
+                    "active": false
+                },
+                {
+                    "url": "http:\/\/localhost:8000\/api\/projects?page=1",
+                    "label": "1",
+                    "page": 1,
+                    "active": true
+                },
+                {
+                    "url": null,
+                    "label": "Next &raquo;",
+                    "page": null,
+                    "active": false
+                }
+            ],
+            "path": "http:\/\/localhost:8000\/api\/projects",
+            "per_page": 15,
+            "to": 1,
+            "total": 1
+        }
+    },
+    "GET \/projects\/:id": {
+        "data": {
+            "id": 1,
+            "client_id": 1,
+            "name": "Website Hand, Nitzsche and Mayer",
+            "description": "Quo temporibus pariatur sed sint.",
+            "status": "on_hold",
+            "status_label": "Ditahan",
+            "start_date": "2026-03-10",
+            "end_date": null,
+            "client": {
+                "id": 1,
+                "name": "Jermaine Legros",
+                "company": "Corkery, Kuhic and Hessel",
+                "email": "baltenwerth@walsh.biz",
+                "phone": "432-702-0774",
+                "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            },
+            "assets": [
+                {
+                    "id": 1,
+                    "project_id": 1,
+                    "type": "ssl",
+                    "type_label": "SSL",
+                    "name": "SSL borer.biz",
+                    "provider": "Niagahoster",
+                    "renewal_cost": "500000.00",
+                    "billing_cycle": "monthly",
+                    "billing_cycle_label": "Bulanan",
+                    "start_date": "2025-03-01",
+                    "expired_date": "2026-12-31",
+                    "days_until_expiry": 37,
+                    "auto_renew": false,
+                    "status": "active",
+                    "status_label": "Aktif",
+                    "metadata": {
+                        "issuer": "Sectigo",
+                        "wildcard": false
+                    },
+                    "notes": null,
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                }
+            ],
+            "created_at": "2026-11-24T03:40:40+00:00",
+            "updated_at": "2026-11-24T03:40:40+00:00"
+        }
+    },
+    "GET \/assets": {
+        "data": [
+            {
+                "id": 1,
+                "project_id": 1,
+                "type": "ssl",
+                "type_label": "SSL",
+                "name": "SSL borer.biz",
+                "provider": "Niagahoster",
+                "renewal_cost": "500000.00",
+                "billing_cycle": "monthly",
+                "billing_cycle_label": "Bulanan",
+                "start_date": "2025-03-01",
+                "expired_date": "2026-12-31",
+                "days_until_expiry": 37,
+                "auto_renew": false,
+                "status": "active",
+                "status_label": "Aktif",
+                "metadata": {
+                    "issuer": "Sectigo",
+                    "wildcard": false
+                },
+                "notes": null,
+                "project": {
+                    "id": 1,
+                    "client_id": 1,
+                    "name": "Website Hand, Nitzsche and Mayer",
+                    "description": "Quo temporibus pariatur sed sint.",
+                    "status": "on_hold",
+                    "status_label": "Ditahan",
+                    "start_date": "2026-03-10",
+                    "end_date": null,
+                    "client": {
+                        "id": 1,
+                        "name": "Jermaine Legros",
+                        "company": "Corkery, Kuhic and Hessel",
+                        "email": "baltenwerth@walsh.biz",
+                        "phone": "432-702-0774",
+                        "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                        "created_at": "2026-11-24T03:40:40+00:00",
+                        "updated_at": "2026-11-24T03:40:40+00:00"
+                    },
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                },
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            }
+        ],
+        "links": {
+            "first": "http:\/\/localhost:8000\/api\/assets?page=1",
+            "last": "http:\/\/localhost:8000\/api\/assets?page=1",
+            "prev": null,
+            "next": null
+        },
+        "meta": {
+            "current_page": 1,
+            "from": 1,
+            "last_page": 1,
+            "links": [
+                {
+                    "url": null,
+                    "label": "&laquo; Previous",
+                    "page": null,
+                    "active": false
+                },
+                {
+                    "url": "http:\/\/localhost:8000\/api\/assets?page=1",
+                    "label": "1",
+                    "page": 1,
+                    "active": true
+                },
+                {
+                    "url": null,
+                    "label": "Next &raquo;",
+                    "page": null,
+                    "active": false
+                }
+            ],
+            "path": "http:\/\/localhost:8000\/api\/assets",
+            "per_page": 15,
+            "to": 1,
+            "total": 1
+        }
+    },
+    "GET \/assets\/:id": {
+        "data": {
+            "id": 1,
+            "project_id": 1,
+            "type": "ssl",
+            "type_label": "SSL",
+            "name": "SSL borer.biz",
+            "provider": "Niagahoster",
+            "renewal_cost": "500000.00",
+            "billing_cycle": "monthly",
+            "billing_cycle_label": "Bulanan",
+            "start_date": "2025-03-01",
+            "expired_date": "2026-12-31",
+            "days_until_expiry": 37,
+            "auto_renew": false,
+            "status": "active",
+            "status_label": "Aktif",
+            "metadata": {
+                "issuer": "Sectigo",
+                "wildcard": false
+            },
+            "notes": null,
+            "project": {
+                "id": 1,
+                "client_id": 1,
+                "name": "Website Hand, Nitzsche and Mayer",
+                "description": "Quo temporibus pariatur sed sint.",
+                "status": "on_hold",
+                "status_label": "Ditahan",
+                "start_date": "2026-03-10",
+                "end_date": null,
+                "client": {
+                    "id": 1,
+                    "name": "Jermaine Legros",
+                    "company": "Corkery, Kuhic and Hessel",
+                    "email": "baltenwerth@walsh.biz",
+                    "phone": "432-702-0774",
+                    "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                },
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            },
+            "renewals": [
+                {
+                    "id": 1,
+                    "asset_id": 1,
+                    "renewed_by": 2,
+                    "renewed_by_name": "Dale Lemke III",
+                    "renewal_date": "2026-11-01",
+                    "previous_expired_date": "2026-09-25",
+                    "new_expired_date": "2027-09-25",
+                    "cost": "250000.00",
+                    "invoice_number": "INV-983712",
+                    "payment_method": "kartu_kredit",
+                    "status": "pending",
+                    "status_label": "Menunggu Pembayaran",
+                    "notes": null,
+                    "created_at": "2026-11-24T03:40:40+00:00"
+                }
+            ],
+            "created_at": "2026-11-24T03:40:40+00:00",
+            "updated_at": "2026-11-24T03:40:40+00:00"
+        }
+    },
+    "GET \/assets\/:id\/renewals": {
+        "data": [
+            {
+                "id": 1,
+                "asset_id": 1,
+                "renewed_by": 2,
+                "renewed_by_name": "Dale Lemke III",
+                "renewal_date": "2026-11-01",
+                "previous_expired_date": "2026-09-25",
+                "new_expired_date": "2027-09-25",
+                "cost": "250000.00",
+                "invoice_number": "INV-983712",
+                "payment_method": "kartu_kredit",
+                "status": "pending",
+                "status_label": "Menunggu Pembayaran",
+                "notes": null,
+                "created_at": "2026-11-24T03:40:40+00:00"
+            }
+        ]
+    },
+    "GET \/renewals\/:id": {
+        "data": {
+            "id": 1,
+            "asset_id": 1,
+            "renewed_by": 2,
+            "renewed_by_name": "Dale Lemke III",
+            "renewal_date": "2026-11-01",
+            "previous_expired_date": "2026-09-25",
+            "new_expired_date": "2027-09-25",
+            "cost": "250000.00",
+            "invoice_number": "INV-983712",
+            "payment_method": "kartu_kredit",
+            "status": "pending",
+            "status_label": "Menunggu Pembayaran",
+            "notes": null,
+            "asset": {
+                "id": 1,
+                "project_id": 1,
+                "type": "ssl",
+                "type_label": "SSL",
+                "name": "SSL borer.biz",
+                "provider": "Niagahoster",
+                "renewal_cost": "500000.00",
+                "billing_cycle": "monthly",
+                "billing_cycle_label": "Bulanan",
+                "start_date": "2025-03-01",
+                "expired_date": "2026-12-31",
+                "days_until_expiry": 37,
+                "auto_renew": false,
+                "status": "active",
+                "status_label": "Aktif",
+                "metadata": {
+                    "issuer": "Sectigo",
+                    "wildcard": false
+                },
+                "notes": null,
+                "project": {
+                    "id": 1,
+                    "client_id": 1,
+                    "name": "Website Hand, Nitzsche and Mayer",
+                    "description": "Quo temporibus pariatur sed sint.",
+                    "status": "on_hold",
+                    "status_label": "Ditahan",
+                    "start_date": "2026-03-10",
+                    "end_date": null,
+                    "client": {
+                        "id": 1,
+                        "name": "Jermaine Legros",
+                        "company": "Corkery, Kuhic and Hessel",
+                        "email": "baltenwerth@walsh.biz",
+                        "phone": "432-702-0774",
+                        "address": "5804 Vallie Brook Suite 975\nBartonborough, NV 32976",
+                        "created_at": "2026-11-24T03:40:40+00:00",
+                        "updated_at": "2026-11-24T03:40:40+00:00"
+                    },
+                    "created_at": "2026-11-24T03:40:40+00:00",
+                    "updated_at": "2026-11-24T03:40:40+00:00"
+                },
+                "created_at": "2026-11-24T03:40:40+00:00",
+                "updated_at": "2026-11-24T03:40:40+00:00"
+            },
+            "created_at": "2026-11-24T03:40:40+00:00"
+        }
+    },
+    "GET \/users": {
+        "data": [
+            {
+                "id": 2,
+                "name": "Dale Lemke III",
+                "email": "maggio.skye@example.org",
+                "role": "staff",
+                "role_label": "Staff",
+                "client_id": null,
+                "client": null,
+                "created_at": "2026-11-24T03:40:40+00:00"
+            },
+            {
+                "id": 1,
+                "name": "Lyric Schmidt",
+                "email": "letitia82@example.com",
+                "role": "admin",
+                "role_label": "Admin",
+                "client_id": null,
+                "client": null,
+                "created_at": "2026-11-24T03:40:39+00:00"
+            }
+        ],
+        "links": {
+            "first": "http:\/\/localhost:8000\/api\/users?page=1",
+            "last": "http:\/\/localhost:8000\/api\/users?page=1",
+            "prev": null,
+            "next": null
+        },
+        "meta": {
+            "current_page": 1,
+            "from": 1,
+            "last_page": 1,
+            "links": [
+                {
+                    "url": null,
+                    "label": "&laquo; Previous",
+                    "page": null,
+                    "active": false
+                },
+                {
+                    "url": "http:\/\/localhost:8000\/api\/users?page=1",
+                    "label": "1",
+                    "page": 1,
+                    "active": true
+                },
+                {
+                    "url": null,
+                    "label": "Next &raquo;",
+                    "page": null,
+                    "active": false
+                }
+            ],
+            "path": "http:\/\/localhost:8000\/api\/users",
+            "per_page": 15,
+            "to": 2,
+            "total": 2
+        }
+    },
+    "GET \/notifications": {
+        "data": [
+            {
+                "id": "81361e4b-0f51-4cec-ad3f-ac1570d7833c",
+                "type": "App\\Notifications\\ExpiringAssetAlert",
+                "data": {
+                    "level": "h30",
+                    "asset_id": 1,
+                    "asset_name": "SSL borer.biz",
+                    "asset_type": "ssl",
+                    "project_name": "Website Hand, Nitzsche and Mayer",
+                    "expired_date": "2026-12-31",
+                    "days_until_expiry": 37,
+                    "message": "[H-30] SSL borer.biz akan kedaluwarsa dalam 30 hari"
+                },
+                "read_at": null,
+                "created_at": "2026-11-24T03:40:40+00:00"
+            }
+        ],
+        "meta": {
+            "current_page": 1,
+            "last_page": 1,
+            "total": 1
+        },
+        "unread_count": 1
+    }
+}
