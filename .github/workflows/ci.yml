@@ -16,6 +16,9 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      # Kunci statis hanya untuk test di CI; bukan kunci produksi.
+      APP_KEY: base64:KawdXVR0OVNw+X3o3WrVnwVDAsk241knRXBgEmuFOYg=
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
