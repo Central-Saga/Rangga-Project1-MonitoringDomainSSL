@@ -14,7 +14,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * Atribut cast dinyatakan eksplisit agar static analysis memahami tipe runtime.
+ *
+ * @property AssetType $type
+ * @property AssetStatus|null $status
+ * @property Carbon|null $start_date
+ * @property Carbon|null $expired_date
+ */
 #[Fillable(['project_id', 'type', 'name', 'provider', 'renewal_cost', 'billing_cycle', 'start_date', 'expired_date', 'auto_renew', 'status', 'metadata', 'notes'])]
 class Asset extends Model
 {
@@ -39,7 +48,7 @@ class Asset extends Model
     }
 
     /**
-     * @return BelongsTo<Project, Asset>
+     * @return BelongsTo<Project, $this>
      */
     public function project(): BelongsTo
     {
@@ -47,7 +56,7 @@ class Asset extends Model
     }
 
     /**
-     * @return HasMany<Renewal>
+     * @return HasMany<Renewal, $this>
      */
     public function renewals(): HasMany
     {

@@ -5,6 +5,30 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * JsonResource meneruskan atribut model secara magic lewat __get().
+ *
+ * @property mixed $id
+ * @property mixed $project_id
+ * @property mixed $type
+ * @property mixed $type_label
+ * @property mixed $name
+ * @property mixed $provider
+ * @property mixed $renewal_cost
+ * @property mixed $billing_cycle
+ * @property mixed $billing_cycle_label
+ * @property mixed $start_date
+ * @property mixed $expired_date
+ * @property mixed $auto_renew
+ * @property mixed $status
+ * @property mixed $status_label
+ * @property mixed $metadata
+ * @property mixed $notes
+ * @property mixed $created_at
+ * @property mixed $updated_at
+ *
+ * @method int daysUntilExpiry()
+ */
 class AssetResource extends JsonResource
 {
     /**

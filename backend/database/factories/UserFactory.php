@@ -67,7 +67,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Client,
-            'client_id' => $client?->id ?? Client::factory(),
+            'client_id' => $client === null ? Client::factory() : $client->id,
         ]);
     }
 }

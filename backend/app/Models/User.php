@@ -48,7 +48,7 @@ class User extends Authenticatable
     /**
      * Klien yang terhubung dengan akun ini (khusus role client).
      *
-     * @return BelongsTo<Client, User>
+     * @return BelongsTo<Client, $this>
      */
     public function client(): BelongsTo
     {
@@ -58,7 +58,7 @@ class User extends Authenticatable
     /**
      * Riwayat perpanjangan yang dicatat oleh user ini.
      *
-     * @return HasMany<Renewal>
+     * @return HasMany<Renewal, $this>
      */
     public function renewals(): HasMany
     {

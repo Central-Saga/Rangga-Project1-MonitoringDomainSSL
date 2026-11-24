@@ -30,7 +30,7 @@ class Renewal extends Model
     }
 
     /**
-     * @return BelongsTo<Asset, Renewal>
+     * @return BelongsTo<Asset, $this>
      */
     public function asset(): BelongsTo
     {
@@ -38,7 +38,7 @@ class Renewal extends Model
     }
 
     /**
-     * @return BelongsTo<User, Renewal>
+     * @return BelongsTo<User, $this>
      */
     public function renewedBy(): BelongsTo
     {
