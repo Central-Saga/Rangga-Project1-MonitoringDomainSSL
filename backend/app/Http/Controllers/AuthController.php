@@ -84,7 +84,9 @@ class AuthController extends Controller
      */
     private function withAuthCookies(JsonResponse $response, string $token): JsonResponse
     {
-        $secure = app()->environment('production');
+        // Cookie auth selalu Secure + SameSite. http://localhost dan 127.0.0.1
+        // dianggap trustworthy oleh browser modern, jadi alur dev tetap jalan.
+        $secure = true;
 
         return $response
             ->cookie('token', $token, 60, '/', null, $secure, true, false, 'lax')
