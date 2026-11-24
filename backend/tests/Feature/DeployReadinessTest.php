@@ -67,6 +67,7 @@ class DeployReadinessTest extends TestCase
         $release = substr($ci, $position);
 
         foreach ([
+            'cp .env.example .env',
             'php artisan migrate --force',
             'php artisan storage:link --force',
             'php artisan optimize',
