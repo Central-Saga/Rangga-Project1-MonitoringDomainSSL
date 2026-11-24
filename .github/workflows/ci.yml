@@ -152,10 +152,10 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      # APP_KEY sudah disediakan lewat env job, jadi tidak perlu key:generate
+      # (yang akan mengeluh karena .env.example memuat APP_KEY kosong).
       - name: Prepare environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
+        run: cp .env.example .env
 
       # Migrasi benar-benar dijalankan sebagai job rilis (bukan lagi echo).
       - name: Run migrations

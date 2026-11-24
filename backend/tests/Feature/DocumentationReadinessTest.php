@@ -133,6 +133,20 @@ class DocumentationReadinessTest extends TestCase
         }
     }
 
+    public function test_env_example_defaults_work_with_postgres_and_phpredis(): void
+    {
+        $env = $this->contents('backend/.env.example');
+
+        // Nilai MySQL-only dan nilai khusus predis membuat migrate/queue:restart
+        // gagal pada rehearsal rilis #112; keduanya sudah diperbaiki.
+        $this->assertStringContainsString('DB_CONNECTION=pgsql', $env);
+        $this->assertStringContainsString('DB_CHARSET=utf8', $env);
+        $this->assertStringNotContainsString('DB_CHARSET=utf8mb4', $env);
+        $this->assertStringContainsString('REDIS_CLIENT=phpredis', $env);
+        $this->assertStringContainsString('REDIS_BACKOFF_ALGORITHM=equal_jitter', $env);
+        $this->assertStringNotContainsString('REDIS_BACKOFF_ALGORITHM=decorrelatedJitterBackoffV2', $env);
+    }
+
     public function test_readme_documents_clean_execution_under_fifteen_minutes(): void
     {
         $readme = $this->contents('README.md');
