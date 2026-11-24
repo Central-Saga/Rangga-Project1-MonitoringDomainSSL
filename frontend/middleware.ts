@@ -9,6 +9,26 @@ function isLocalHost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 }
 
+/**
+ * Halaman yang hanya boleh dibuka dengan sesi. Guard klien di `(app)/layout.tsx`
+ * tetap dipakai untuk UX, tetapi middleware memblokir deep link tanpa cookie
+ * lebih awal di server (audit #93).
+ */
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/clients",
+  "/projects",
+  "/assets",
+  "/notifications",
+  "/users",
+];
+
+function needsSession(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 function contentSecurityPolicy(nonce: string, allowLocalApi: boolean): string {
   const localConnect = allowLocalApi ? " http://localhost:* http://127.0.0.1:*" : "";
   return [
@@ -32,6 +52,13 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
+
+  const { pathname, search } = request.nextUrl;
+  if (needsSession(pathname) && !request.cookies.get("token")?.value) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", `${pathname}${search}`);
+    return NextResponse.redirect(loginUrl);
+  }
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
