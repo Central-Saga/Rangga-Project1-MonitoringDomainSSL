@@ -11,7 +11,7 @@
  * - validasi runtime semua respons lewat zod di boundary (1.4)
  */
 
-import type { ZodTypeAny } from "zod";
+import type { ZodType, ZodTypeAny } from "zod";
 import { responseSchemaFor } from "./schemas";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
@@ -275,7 +275,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   const method = options.method ?? "GET";
-  const schema = options.schema ?? responseSchemaFor(method, path);
+  // Cast pada skema, bukan pada data respons: `T` tetap dibuktikan oleh safeParse.
+  const schema = (options.schema ?? responseSchemaFor(method, path)) as ZodType<T>;
   const parsed = schema.safeParse(payload);
 
   if (!parsed.success) {
@@ -285,7 +286,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     throw contractError(res.status, `${location}: ${expected}`);
   }
 
-  return parsed.data as T;
+  return parsed.data;
 }
 
 export const api = {
