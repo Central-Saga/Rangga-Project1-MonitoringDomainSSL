@@ -91,19 +91,83 @@ jobs:
     needs: [backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
+    # Rehearsal rilis di runner: perintah deploy dijalankan sungguhan terhadap
+    # Postgres/Redis sementara, bukan sekadar echo (audit #112 / backend 15.7).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: monitoring
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: monitoring_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U monitoring -d monitoring_db"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_KEY: base64:KawdXVR0OVNw+X3o3WrVnwVDAsk241knRXBgEmuFOYg=
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: monitoring_db
+      DB_USERNAME: monitoring
+      DB_PASSWORD: secret
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      SEED_PASSWORD: password
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Migrasi dijalankan sebagai job rilis, bukan saat boot container (15.7).
-      - name: Run migrations
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, pdo_pgsql, redis, zip, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare environment
         run: |
-          echo "Deploy hook: php artisan migrate --force"
-          echo "Tambahkan langkah deploy ke server produksi di sini."
+          cp .env.example .env
+          php artisan key:generate --force
+
+      # Migrasi benar-benar dijalankan sebagai job rilis (bukan lagi echo).
+      - name: Run migrations
+        run: php artisan migrate --force --no-interaction
 
       - name: Optimize + queue restart + storage link
         run: |
-          echo "Deploy hook: php artisan optimize"
-          echo "Deploy hook: php artisan queue:restart"
-          echo "Deploy hook: php artisan storage:link"
-          echo "Deploy hook: chown -R www-data:www-data storage bootstrap/cache"
+          php artisan storage:link --force
+          php artisan optimize
+          php artisan queue:restart
+
+      - name: Verify release artifacts
+        run: |
+          test -L public/storage
+          php artisan audit:verify
