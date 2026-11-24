@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Dotenv\Dotenv;
 use Tests\TestCase;
 
 /**
@@ -104,6 +105,31 @@ class DocumentationReadinessTest extends TestCase
     {
         foreach (['.env.example', 'backend/.env.example'] as $file) {
             $this->assertStringContainsString('SEED_PASSWORD=password', $this->contents($file), "{$file} harus mendeklarasikan SEED_PASSWORD.");
+        }
+    }
+
+    public function test_env_examples_are_parseable_by_dotenv(): void
+    {
+        foreach (['.env.example', 'backend/.env.example'] as $file) {
+            $directory = sys_get_temp_dir().'/audit-env-'.bin2hex(random_bytes(6));
+            mkdir($directory);
+
+            try {
+                copy($this->path($file), $directory.'/.env');
+                $variables = Dotenv::createArrayBacked($directory)->load();
+                $this->assertIsArray($variables, "{$file} harus bisa diparse dotenv.");
+
+                if ($file === 'backend/.env.example') {
+                    // Backslash pada namespace harus dieskap; kalau tidak, dotenv menolak
+                    // file .env dan seluruh artisan command gagal saat boot.
+                    $this->assertSame('App\\Models\\User', $variables['AUTH_MODEL'] ?? null);
+                }
+            } finally {
+                if (file_exists($directory.'/.env')) {
+                    unlink($directory.'/.env');
+                }
+                rmdir($directory);
+            }
         }
     }
 
