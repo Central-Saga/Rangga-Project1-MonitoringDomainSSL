@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AssetStatus;
 use App\Enums\AssetType;
 use App\Enums\BillingCycle;
+use App\Models\Concerns\RecordsAuditTrail;
 use Database\Factories\AssetFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -28,7 +29,7 @@ use Illuminate\Support\Carbon;
 class Asset extends Model
 {
     /** @use HasFactory<AssetFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, RecordsAuditTrail, SoftDeletes;
 
     /**
      * @return array<string, string>
