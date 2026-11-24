@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\UserRole;
+use App\Http\Concerns\ScopedExists;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends FormRequest
 {
+    use ScopedExists;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -35,7 +38,7 @@ class UpdateUserRequest extends FormRequest
             'client_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('clients', 'id'),
+                $this->clientExistsRule(),
                 Rule::requiredIf(fn (): bool => $this->input('role', $user?->role?->value) === UserRole::Client->value),
             ],
         ];

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\AssetStatus;
 use App\Enums\AssetType;
 use App\Enums\BillingCycle;
+use App\Http\Concerns\ScopedExists;
 use App\Models\Asset;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,6 +14,8 @@ use Illuminate\Validation\Validator;
 
 class StoreAssetRequest extends FormRequest
 {
+    use ScopedExists;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -65,7 +68,7 @@ class StoreAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'project_id' => ['required', 'integer', Rule::exists('projects', 'id')],
+            'project_id' => ['required', 'integer', $this->projectExistsRule()],
             'type' => ['required', Rule::enum(AssetType::class)],
             'name' => ['required', 'string', 'max:255'],
             'provider' => ['nullable', 'string', 'max:255'],

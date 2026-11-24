@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ProjectStatus;
+use App\Http\Concerns\ScopedExists;
 use App\Models\Project;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Validator;
 
 class StoreProjectRequest extends FormRequest
 {
+    use ScopedExists;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -59,7 +62,7 @@ class StoreProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => ['required', 'integer', Rule::exists('clients', 'id')],
+            'client_id' => ['required', 'integer', $this->clientExistsRule()],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::enum(ProjectStatus::class)],
