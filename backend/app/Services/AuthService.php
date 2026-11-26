@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Data\LoginCredentials;
+use App\Data\RegisterData;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -17,14 +19,13 @@ use Illuminate\Validation\ValidationException;
 class AuthService
 {
     /**
-     * @param  array<string, mixed>  $data
      * @return array{user: User, token: string}
      */
-    public function register(array $data): array
+    public function register(RegisterData $data): array
     {
         return DB::transaction(function () use ($data): array {
             $user = User::query()->create([
-                ...$data,
+                ...$data->toArray(),
                 'role' => UserRole::Client,
             ]);
 
@@ -36,16 +37,15 @@ class AuthService
     }
 
     /**
-     * @param  array{email: string, password: string}  $credentials
      * @return array{user: User, token: string}
      *
      * @throws ValidationException
      */
-    public function login(array $credentials): array
+    public function login(LoginCredentials $credentials): array
     {
-        $user = User::query()->where('email', $credentials['email'])->first();
+        $user = User::query()->where('email', $credentials->email)->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (! $user || ! Hash::check($credentials->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah.'],
             ]);

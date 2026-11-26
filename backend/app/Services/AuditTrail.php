@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Data\AuditChanges;
+use App\Data\AuditFields;
 use App\Enums\UserRole;
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,39 +17,40 @@ use Illuminate\Support\Facades\DB;
  * Setiap baris menyimpan hash sha256 dari fields + hash baris sebelumnya.
  * Mengubah atau menghapus baris mana pun memutus rantai; `verify()`
  * mengembalikan daftar baris yang tidak konsisten.
+ *
+ * Input berupa DTO (`AuditChanges`, `AuditFields`) — bukan array mentah
+ * (audit #94).
  */
 class AuditTrail
 {
-    private const SENSITIVE = ['password', 'remember_token', 'token', 'x-xsrf-token', 'xsrf-token'];
-
-    /**
-     * @param  array<string, mixed>  $changes
-     */
-    public function record(string $event, Model $subject, array $changes = []): AuditLog
+    public function record(string $event, Model $subject, ?AuditChanges $changes = null): AuditLog
     {
         $now = now();
         $actor = auth()->user();
         $actorId = auth()->id();
         $role = $actor?->role;
 
-        $fields = [
+        $values = [
             'previous_hash' => (string) (AuditLog::query()->latest('id')->value('hash') ?? str_repeat('0', 64)),
             'event' => $event,
             'subject_type' => $subject->getMorphClass(),
             'subject_id' => (string) $subject->getKey(),
             'actor_id' => $actorId === null ? null : (string) $actorId,
             'actor_role' => $role instanceof UserRole ? $role->value : null,
-            'changes' => $this->sanitize($changes),
+            'changes' => ($changes ?? new AuditChanges)->sanitized()->toArray(),
             'ip_address' => request()->ip(),
             'user_agent' => mb_substr((string) request()->userAgent(), 0, 512),
             'created_at' => $now->toIso8601String(),
         ];
 
-        $fields['hash'] = $this->fingerprint($fields);
-        $log = AuditLog::create($fields);
+        // Urutan kunci di atas harus sama dengan fieldsFromLog() agar hash lama
+        // tetap terverifikasi setelah refactor DTO.
+        $hash = AuditFields::from($values)->fingerprint();
+        $values['hash'] = $hash;
+        $log = AuditLog::create($values);
 
         DB::table('audit_log_state')->updateOrInsert(['key' => 'chain'], [
-            'head_hash' => $fields['hash'],
+            'head_hash' => $hash,
             'entry_count' => AuditLog::query()->count(),
         ]);
 
@@ -71,7 +74,7 @@ class AuditTrail
                     $errors[] = "Baris {$log->id}: previous_hash tidak cocok dengan baris sebelumnya.";
                 }
 
-                if (! hash_equals($log->hash, $this->fingerprint($this->fieldsFromLog($log)))) {
+                if (! hash_equals($log->hash, $this->fieldsFromLog($log)->fingerprint())) {
                     $errors[] = "Baris {$log->id}: hash tidak cocok dengan isi baris (data diubah).";
                 }
 
@@ -94,54 +97,22 @@ class AuditTrail
         return ['ok' => $errors === [], 'count' => $count, 'errors' => $errors];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function fieldsFromLog(AuditLog $log): array
+    private function fieldsFromLog(AuditLog $log): AuditFields
     {
         /** @var Carbon $createdAt */
         $createdAt = $log->created_at;
 
-        return [
+        return AuditFields::from([
             'previous_hash' => $log->previous_hash,
             'event' => $log->event,
             'subject_type' => $log->subject_type,
             'subject_id' => $log->subject_id,
             'actor_id' => $log->actor_id === null ? null : (string) $log->actor_id,
             'actor_role' => $log->actor_role,
-            'changes' => $this->sanitize($log->changes ?? []),
+            'changes' => (new AuditChanges(is_array($log->changes) ? $log->changes : []))->sanitized()->toArray(),
             'ip_address' => $log->ip_address,
             'user_agent' => $log->user_agent,
             'created_at' => $createdAt->toIso8601String(),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $fields
-     */
-    private function fingerprint(array $fields): string
-    {
-        return hash('sha256', json_encode($fields, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>
-     */
-    private function sanitize(array $values): array
-    {
-        $clean = [];
-
-        foreach ($values as $key => $value) {
-            if (in_array(strtolower((string) $key), self::SENSITIVE, true)) {
-                continue;
-            }
-
-            $clean[$key] = is_array($value) ? $this->sanitize($value) : $value;
-        }
-
-        ksort($clean);
-
-        return $clean;
+        ]);
     }
 }

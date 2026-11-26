@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Data\RenewalData;
 use App\Http\Concerns\ConstrainsListQueries;
 use App\Http\Concerns\CreatedResponse;
 use App\Http\Requests\StoreRenewalRequest;
@@ -11,6 +12,7 @@ use App\Models\Asset;
 use App\Models\Renewal;
 use App\Services\RenewalService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -22,7 +24,7 @@ class RenewalController extends Controller
     /**
      * Riwayat perpanjangan milik satu aset.
      */
-    public function index(Asset $asset): AnonymousResourceCollection
+    public function index(Request $request, Asset $asset): AnonymousResourceCollection
     {
         $this->authorize('view', $asset);
 
@@ -30,7 +32,8 @@ class RenewalController extends Controller
             ->select(['id', 'asset_id', 'renewed_by', 'renewal_date', 'previous_expired_date', 'new_expired_date', 'cost', 'invoice_number', 'payment_method', 'status', 'notes', 'created_at', 'updated_at'])
             ->with('renewedBy')
             ->latest('renewal_date')
-            ->get();
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return RenewalResource::collection($renewals);
     }
@@ -42,7 +45,7 @@ class RenewalController extends Controller
     {
         $this->authorize('update', $asset);
 
-        $renewal = $service->record($asset, $request->validated(), $request->user());
+        $renewal = $service->record($asset, RenewalData::from($request->validated()), $request->user());
 
         return $this->created(
             new RenewalResource($renewal->load(['renewedBy', 'asset'])),

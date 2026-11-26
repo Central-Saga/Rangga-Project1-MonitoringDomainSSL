@@ -11,6 +11,9 @@ use Illuminate\Http\Response;
 
 class ReportController extends Controller
 {
+    /** Batas baris laporan PDF supaya memori tidak tumbuh tanpa batas (#101). */
+    private const MAX_EXPORT_ROWS = 500;
+
     /**
      * Laporan PDF aset yang akan kedaluwarsa dalam N hari.
      */
@@ -20,18 +23,25 @@ class ReportController extends Controller
 
         $days = min($request->integer('days', 30), 365);
 
-        $assets = Asset::query()
+        $query = Asset::query()
             ->with('project.client')
             ->where('status', AssetStatus::Active->value)
             ->whereDate('expired_date', '>=', now()->toDateString())
             ->whereDate('expired_date', '<=', now()->addDays($days)->toDateString())
-            ->orderBy('expired_date')
-            ->get();
+            ->orderBy('expired_date');
+
+        $total = (clone $query)->count();
+        $assets = collect(iterator_to_array(
+            $query->limit(self::MAX_EXPORT_ROWS)->lazy(self::MAX_EXPORT_ROWS),
+            false
+        ));
 
         $pdf = Pdf::loadView('pdf.expiring-assets', [
             'assets' => $assets,
             'days' => $days,
             'generatedAt' => now(),
+            'total' => $total,
+            'truncated' => $total > $assets->count(),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("laporan-aset-kedaluwarsa-{$days}-hari.pdf");
