@@ -42,11 +42,16 @@ export function TextField({
         autoComplete={autoComplete}
         placeholder={placeholder ?? ""}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         className={`w-full rounded-xl border bg-card px-4 py-2.5 text-sm text-ink outline-none transition placeholder:text-mute focus:border-accent focus:ring-2 focus:ring-accent/30 ${
           error ? "border-danger" : "border-line"
         }`}
       />
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
