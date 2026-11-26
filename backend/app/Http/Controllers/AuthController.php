@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Data\LoginCredentials;
+use App\Data\RegisterData;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
@@ -20,7 +22,7 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request, AuthService $service): JsonResponse
     {
-        ['user' => $user, 'token' => $token] = $service->register($request->validated());
+        ['user' => $user, 'token' => $token] = $service->register(RegisterData::from($request->validated()));
 
         return $this->withAuthCookies(
             response()->json([
@@ -37,7 +39,7 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request, AuthService $service): JsonResponse
     {
-        ['user' => $user, 'token' => $token] = $service->login($request->validated());
+        ['user' => $user, 'token' => $token] = $service->login(LoginCredentials::from($request->validated()));
 
         return $this->withAuthCookies(
             response()->json([

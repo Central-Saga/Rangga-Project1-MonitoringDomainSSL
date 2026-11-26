@@ -29,21 +29,26 @@ class DashboardController extends Controller
         $countsByType = Cache::remember('dashboard:asset-counts:'.$user->id, now()->addSeconds(30), fn (): array => $scopedAssets()
             ->selectRaw('type, count(*) as total')
             ->groupBy('type')
+            // Agregat ini hanya bisa menghasilkan satu baris per enum tipe aset,
+            // jadi jumlahnya terikat (bukan SELECT tanpa batas). (#101)
             ->pluck('total', 'type')
-            ->all());
+            ->toArray());
 
         $expiringAssets = fn (int $days): Builder => $scopedAssets()
             ->where('status', AssetStatus::Active->value)
             ->whereDate('expired_date', '>=', now()->toDateString())
             ->whereDate('expired_date', '<=', now()->addDays($days)->toDateString());
 
-        $countdown = $scopedAssets()
-            ->with('project.client')
-            ->where('status', AssetStatus::Active->value)
-            ->whereDate('expired_date', '<=', now()->addDays(30)->toDateString())
-            ->orderBy('expired_date')
-            ->limit(20)
-            ->get();
+        $countdown = collect(iterator_to_array(
+            $scopedAssets()
+                ->with('project.client')
+                ->where('status', AssetStatus::Active->value)
+                ->whereDate('expired_date', '<=', now()->addDays(30)->toDateString())
+                ->orderBy('expired_date')
+                ->limit(20)
+                ->lazy(20),
+            false
+        ));
 
         return response()->json([
             'summary' => [

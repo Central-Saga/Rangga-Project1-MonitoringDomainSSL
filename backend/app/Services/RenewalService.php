@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\RenewalData;
 use App\Enums\AssetStatus;
 use App\Enums\RenewalStatus;
 use App\Models\Asset;
@@ -17,26 +18,23 @@ use Illuminate\Support\Facades\DB;
  */
 class RenewalService
 {
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function record(Asset $asset, array $data, User $actor): Renewal
+    public function record(Asset $asset, RenewalData $data, User $actor): Renewal
     {
         return DB::transaction(function () use ($asset, $data, $actor): Renewal {
             $renewal = $asset->renewals()->create([
                 'renewed_by' => $actor->id,
-                'renewal_date' => $data['renewal_date'] ?? now()->toDateString(),
+                'renewal_date' => $data->renewalDate ?? now()->toDateString(),
                 'previous_expired_date' => $asset->expired_date,
-                'new_expired_date' => $data['new_expired_date'],
-                'cost' => $data['cost'] ?? $asset->renewal_cost,
-                'invoice_number' => $data['invoice_number'] ?? null,
-                'payment_method' => $data['payment_method'] ?? null,
-                'status' => $data['status'] ?? RenewalStatus::Paid->value,
-                'notes' => $data['notes'] ?? null,
+                'new_expired_date' => $data->newExpiredDate,
+                'cost' => $data->cost ?? $asset->renewal_cost,
+                'invoice_number' => $data->invoiceNumber,
+                'payment_method' => $data->paymentMethod,
+                'status' => $data->status ?? RenewalStatus::Paid->value,
+                'notes' => $data->notes,
             ]);
 
             $asset->update([
-                'expired_date' => $data['new_expired_date'],
+                'expired_date' => $data->newExpiredDate,
                 'status' => $asset->status === AssetStatus::Expired
                     ? AssetStatus::Active->value
                     : $asset->status->value,

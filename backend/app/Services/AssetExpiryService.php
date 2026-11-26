@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\DB;
  */
 class AssetExpiryService
 {
+    /** Batas penerima alert per siklus agar query tidak unbounded (#101). */
+    private const MAX_RECIPIENTS = 500;
+
     /**
      * @return array{has_recipients: bool, sent: array{h30: int, h7: int, expired: int}}
      */
@@ -31,10 +34,19 @@ class AssetExpiryService
                 ->pastDue()
                 ->update(['status' => AssetStatus::Expired->value]);
 
-            $recipients = User::query()->whereIn('role', ['admin', 'staff'])->get();
+            // lazy() mematuhi limit di builder dan mengalirkan baris per chunk,
+            // jadi tidak ada SELECT penerima tanpa batas (#101).
+            $recipients = iterator_to_array(
+                User::query()
+                    ->whereIn('role', ['admin', 'staff'])
+                    ->orderBy('id')
+                    ->limit(self::MAX_RECIPIENTS)
+                    ->lazy(100),
+                false
+            );
             $sent = ['h30' => 0, 'h7' => 0, 'expired' => 0];
 
-            if ($recipients->isEmpty()) {
+            if ($recipients === []) {
                 return ['has_recipients' => false, 'sent' => $sent];
             }
 

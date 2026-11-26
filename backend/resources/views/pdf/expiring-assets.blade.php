@@ -17,8 +17,12 @@
 <body>
     <h1>Laporan Aset Akan Kedaluwarsa</h1>
     <p class="meta">
-        Rentang: {{ $days }} hari ke depan &middot; Dibuat: {{ $generatedAt->format('d M Y H:i') }} &middot; Total: {{ $assets->count() }} aset
+        Rentang: {{ $days }} hari ke depan &middot; Dibuat: {{ $generatedAt->format('d M Y H:i') }} &middot; Total: {{ $total }} aset &middot; Ditampilkan: {{ $assets->count() }} aset
     </p>
+
+    @if ($truncated)
+        <p class="meta" style="color: #d97706">Laporan dibatasi {{ $assets->count() }} baris terawal berdasarkan tanggal kedaluwarsa. Persempit rentang hari untuk melihat sisinya.</p>
+    @endif
 
     <table>
         <thead>
